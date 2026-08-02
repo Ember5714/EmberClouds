@@ -66,9 +66,9 @@ Open `http://localhost:3000`. Other devices on the LAN use `http://<your-ip>:300
 ### SMTP Email Setup
 
 ```bat
-set SMTP_HOST=smtp.qq.com
+set SMTP_HOST=smtp.example.com
 set SMTP_PORT=587
-set SMTP_USER=your@qq.com
+set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
@@ -296,9 +296,9 @@ Windows 系统下可直接双击 `start.bat`，脚本将自动完成依赖安装
 ### SMTP 邮件配置
 
 ```bat
-set SMTP_HOST=smtp.qq.com
+set SMTP_HOST=smtp.example.com
 set SMTP_PORT=587
-set SMTP_USER=your@qq.com
+set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
@@ -526,9 +526,9 @@ Windows 系統下可直接雙擊 `start.bat`，指令碼將自動完成依賴安
 ### SMTP 郵件設定
 
 ```bat
-set SMTP_HOST=smtp.qq.com
+set SMTP_HOST=smtp.example.com
 set SMTP_PORT=587
-set SMTP_USER=your@qq.com
+set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
