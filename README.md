@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
+  <a href="https://github.com/Ember5714/EmberClouds?tab=MIT-1-ov-file"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/react-18-61dafb" alt="React">
 </p>
 
