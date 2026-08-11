@@ -1,0 +1,19 @@
+{
+  "name": "emberclouds-server",
+  "version": "1.0.0",
+  "description": "Emberclouds - 局域网文件传输与共享",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "multicast-dns": "^7.2.5",
+    "nodemailer": "^9.0.3",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  }
+}

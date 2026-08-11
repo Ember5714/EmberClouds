@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# build output
+client/dist/
+
+# runtime data
+data/
+file/private/
+file/public/
+file/*/
+
+# binaries
+runtime/
+frp/*.exe
+
+# environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# logs
+*.log
