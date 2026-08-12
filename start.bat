@@ -107,7 +107,7 @@ rem SMTP config
 set SMTP_HOST=smtp-mail.outlook.com
 set SMTP_PORT=587
 set SMTP_USER=admin@example.com
-set SMTP_PASS=Anber_5714
+set SMTP_PASS=your_smtp_password
 
 rem Start server
 cd /d "%SRV%"

@@ -7,7 +7,7 @@ bindAddr = "0.0.0.0"
 bindPort = 7000
 
 # 认证 Token（与 frpc 端保持一致，已自动生成强随机值）
-auth.token = "34363f75952603f1110df4be3c6aae8209a870fd7373f7fbac235cf664941efe"
+auth.token = "your_shared_token_here"
 
 # 允许的端口范围
 allowPorts = [
@@ -19,7 +19,7 @@ allowPorts = [
 webServer.addr = "127.0.0.1"
 webServer.port = 7500
 webServer.user = "admin"
-webServer.password = "d94852bf62f3980d05578bab9692e784"
+webServer.password = "your_dashboard_password_here"
 
 # 日志
 log.to = "./frps.log"

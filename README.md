@@ -36,7 +36,7 @@ A self-hosted LAN file server built with Node.js + React. Think of it as your pe
 - **Download** — HTTP Range support for resumable downloads
 - **Image preview** — click any image to open a full-size lightbox
 - **Dark theme** — auto (follows system settings) or manual toggle
-- **Server CLI** — full admin panel in the console: manage users, browse files, check disk usage
+- **Server TUI** — real-time dashboard with color logo, live status, device discovery, and file management
 - **Public access** — built-in frp config for exposing your server to the internet via a VPS
 - **Auto-setup** — `start.bat` detects missing dependencies and installs them automatically
 
@@ -72,7 +72,7 @@ set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
-If SMTP is not configured, verification codes are printed to the server console (development mode only).
+If SMTP is not configured, verification codes are printed to the server console.
 
 ### Private / Public Repos
 
@@ -83,25 +83,23 @@ If SMTP is not configured, verification codes are printed to the server console 
 
 To go public: open the avatar menu → toggle "Public repo" → switch to the public space and upload files → other users can now find you via search.
 
-### Server CLI
+### Server TUI
 
-Commands available at the `> ` prompt:
+The server features a full-color terminal dashboard with real-time status updates, device discovery, and a log panel. Commands are entered at the `> ` prompt with Tab autocomplete and arrow-key history:
 
 | Command | Description |
 |---------|-------------|
-| `status` | Show server status |
+| `status` | Show server status and network info |
 | `users` | List all registered users |
-| `delete-user` | Delete a user account |
-| `change-email` | Change a user's email |
 | `ls [path]` | List files in a directory |
 | `tree [path]` | Show directory tree |
 | `mkdir <path>` | Create a directory |
-| `rm <path>` | Delete a file or directory (confirmation required) |
+| `rm <path>` | Delete a file or directory (use `rm -y <path>` to confirm) |
 | `du [path]` | Show disk usage |
 | `info <path>` | Show file/directory details |
 | `config` | Show current configuration |
-| `moveto <path>` | Migrate storage to a new location |
-| `help` | Show this help |
+| `clear` | Clear the message log |
+| `help` | Show available commands |
 | `stop` / `restart` | Stop or restart the server |
 
 ### Public Access (frp)
@@ -127,14 +125,16 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 ├── server/                 # Backend (Express)
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # Entry point + API routes + CLI
+│       ├── index.js        # Entry point + API routes + TUI
+│       ├── tui.js           # Terminal UI (color dashboard + commands)
 │       ├── config.js       # Configuration
 │       ├── auth.js         # Token authentication
 │       ├── users.js        # User system (encrypted data storage)
 │       ├── fileServer.js   # File storage & upload
+│       ├── fileCrypto.js   # AES-256-CTR at-rest file encryption
 │       ├── fileLock.js     # Concurrent write queue lock
 │       ├── rateLimit.js    # IP-based rate limiting
-│       ├── repo-cli.js     # CLI file management commands
+│       ├── repo-cli.js     # TUI file management commands
 │       ├── discovery.js    # LAN device discovery (HMAC-signed UDP)
 │       └── wsServer.js     # WebSocket notifications
 ├── client/                 # Frontend (React + Vite)
@@ -277,7 +277,7 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 - **文件下载** — 基于 HTTP Range 协议实现断点续传
 - **图片预览** — 点击图片弹出灯箱查看原图
 - **深色模式** — 支持跟随系统主题自动切换，亦可手动切换
-- **命令行管理** — 服务端控制台提供完整的运维管理能力，包括用户管理、文件浏览、磁盘占用统计等
+- **终端仪表盘** — 全彩 TUI 实时仪表盘，展示运行状态、设备发现、日志面板，支持 Tab 补全和方向键历史
 - **公网接入** — 内置 frp 反向代理配置，配合 VPS 即可将服务暴露至公网
 - **开箱即用** — `start.bat` 一键启动，自动检测并安装缺失的依赖
 
@@ -313,7 +313,7 @@ set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
-若未配置 SMTP，系统验证码将直接输出至服务端控制台（仅开发模式）。
+若未配置 SMTP，系统验证码将直接输出至服务端控制台。
 
 ### 私密与公开仓库
 
@@ -324,25 +324,23 @@ set SMTP_PASS=your_smtp_password
 
 开启公开仓库：点击头像 → 开启"公开仓库" → 切换至公开空间上传文件 → 其他用户可通过用户名搜索到您。
 
-### 服务端 CLI
+### 服务端 TUI
 
-在服务端控制台 `> ` 提示符下可执行以下命令：
+服务端启动后会显示全彩终端仪表盘，实时展示运行状态、网络信息和设备发现。在 `> ` 提示符下输入命令，支持 Tab 自动补全和方向键历史回溯：
 
 | 命令 | 功能描述 |
 |------|--------|
-| `status` | 查看服务器运行状态 |
+| `status` | 查看服务器运行状态和网络信息 |
 | `users` | 查看已注册用户列表 |
-| `delete-user` | 注销指定用户账号 |
-| `change-email` | 修改用户绑定邮箱 |
-| `ls [路径]` | 列出目录内容，默认显示根目录 |
+| `ls [路径]` | 列出目录内容 |
 | `tree [路径]` | 以树形结构展示目录层级 |
 | `mkdir <路径>` | 创建目录 |
-| `rm <路径>` | 删除文件或目录（需二次确认） |
+| `rm <路径>` | 删除文件或目录（需用 `rm -y <路径>` 确认） |
 | `du [路径]` | 统计磁盘空间占用 |
 | `info <路径>` | 查看文件或目录的详细信息 |
 | `config` | 查看当前运行配置 |
-| `moveto <路径>` | 迁移存储目录至新位置 |
-| `help` | 显示帮助信息 |
+| `clear` | 清空日志面板 |
+| `help` | 显示可用命令 |
 | `stop` / `restart` | 停止 / 重启服务器 |
 
 ### 公网访问（frp）
@@ -368,14 +366,16 @@ set SMTP_PASS=your_smtp_password
 ├── server/                 # 后端服务（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模块 + API 路由 + CLI 交互
+│       ├── index.js        # 入口模块 + API 路由 + TUI 交互
+│       ├── tui.js           # 终端仪表盘（彩色面板 + 命令交互）
 │       ├── config.js       # 全局配置
 │       ├── auth.js         # Token 身份认证
 │       ├── users.js        # 用户系统逻辑（加密数据存储）
 │       ├── fileServer.js   # 文件存储与上传处理
+│       ├── fileCrypto.js   # AES-256-CTR 静态文件加密
 │       ├── fileLock.js     # 并发写入队列锁
 │       ├── rateLimit.js    # IP 频率限制
-│       ├── repo-cli.js     # CLI 仓库管理命令
+│       ├── repo-cli.js     # TUI 仓库管理命令
 │       ├── discovery.js    # 局域网设备发现（HMAC 签名 UDP）
 │       └── wsServer.js     # WebSocket 消息推送
 ├── client/                 # 前端应用（React + Vite）
@@ -518,7 +518,7 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 - **檔案下載** — 基於 HTTP Range 協定實現斷點續傳
 - **圖片預覽** — 點擊圖片彈出燈箱檢視原圖
 - **深色模式** — 支援跟隨系統主題自動切換，亦可手動切換
-- **命令列管理** — 伺服器主控台提供完整的維運管理能力，包括用戶管理、檔案瀏覽、磁碟佔用統計等
+- **終端儀表板** — 全彩 TUI 即時儀表板，展示執行狀態、裝置發現、日誌面板，支援 Tab 補全和方向鍵歷史
 - **公網接入** — 內建 frp 反向代理設定，配合 VPS 即可將服務暴露至公網
 - **開箱即用** — `start.bat` 一鍵啟動，自動偵測並安裝缺失的依賴
 
@@ -554,7 +554,7 @@ set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
 ```
 
-若未設定 SMTP，系統驗證碼將直接輸出至伺服器主控台（僅開發模式）。
+若未設定 SMTP，系統驗證碼將直接輸出至伺服器主控台。
 
 ### 私密與公開倉庫
 
@@ -565,25 +565,23 @@ set SMTP_PASS=your_smtp_password
 
 開啟公開倉庫：點擊頭像 → 開啟「公開倉庫」→ 切換至公開空間上傳檔案 → 其他用戶可透過使用者名稱搜尋到您。
 
-### 伺服器 CLI
+### 伺服器 TUI
 
-在伺服器主控台 `> ` 提示符下可執行以下命令：
+伺服器啟動後會顯示全彩終端儀表板，即時展示執行狀態、網路資訊和裝置發現。在 `> ` 提示符下輸入命令，支援 Tab 自動補全和方向鍵歷史回溯：
 
 | 命令 | 功能描述 |
 |------|--------|
-| `status` | 檢視伺服器執行狀態 |
+| `status` | 檢視伺服器執行狀態和網路資訊 |
 | `users` | 檢視已註冊用戶列表 |
-| `delete-user` | 註銷指定用戶帳號 |
-| `change-email` | 修改用戶綁定電子郵件 |
-| `ls [路徑]` | 列出目錄內容，預設顯示根目錄 |
+| `ls [路徑]` | 列出目錄內容 |
 | `tree [路徑]` | 以樹狀結構展示目錄層級 |
 | `mkdir <路徑>` | 建立目錄 |
-| `rm <路徑>` | 刪除檔案或目錄（需二次確認） |
+| `rm <路徑>` | 刪除檔案或目錄（需用 `rm -y <路徑>` 確認） |
 | `du [路徑]` | 統計磁碟空間佔用 |
 | `info <路徑>` | 檢視檔案或目錄的詳細資訊 |
 | `config` | 檢視目前執行設定 |
-| `moveto <路徑>` | 遷移儲存目錄至新位置 |
-| `help` | 顯示幫助資訊 |
+| `clear` | 清空日誌面板 |
+| `help` | 顯示可用命令 |
 | `stop` / `restart` | 停止 / 重新啟動伺服器 |
 
 ### 公網存取（frp）
@@ -609,14 +607,16 @@ set SMTP_PASS=your_smtp_password
 ├── server/                 # 後端服務（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模組 + API 路由 + CLI 互動
+│       ├── index.js        # 入口模組 + API 路由 + TUI 互動
+│       ├── tui.js           # 終端儀表板（彩色面板 + 命令互動）
 │       ├── config.js       # 全域設定
 │       ├── auth.js         # Token 身份認證
 │       ├── users.js        # 用戶系統邏輯（加密資料儲存）
 │       ├── fileServer.js   # 檔案儲存與上傳處理
+│       ├── fileCrypto.js   # AES-256-CTR 靜態檔案加密
 │       ├── fileLock.js     # 並發寫入佇列鎖
 │       ├── rateLimit.js    # IP 頻率限制
-│       ├── repo-cli.js     # CLI 倉庫管理命令
+│       ├── repo-cli.js     # TUI 倉庫管理命令
 │       ├── discovery.js    # 區域網路裝置發現（HMAC 簽名 UDP）
 │       └── wsServer.js     # WebSocket 訊息推送
 ├── client/                 # 前端應用（React + Vite）

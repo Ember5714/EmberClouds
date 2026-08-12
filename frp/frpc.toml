@@ -8,7 +8,7 @@ serverAddr = "你的服务器IP"
 serverPort = 7000
 
 # 认证 Token（与 frps 端保持一致，已自动生成强随机值）
-auth.token = "34363f75952603f1110df4be3c6aae8209a870fd7373f7fbac235cf664941efe"
+auth.token = "your_shared_token_here"
 
 # 通信协议
 protocol = "tcp"

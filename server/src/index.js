@@ -564,11 +564,11 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           tui.render();
           break;
         case 'stop':
-          shutdown('CLI');
+          shutdown('TUI');
           return;
         case 'restart':
           tui.log('Restarting...');
-          shutdown('CLI');
+          shutdown('TUI');
           require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
           return;
         case 'ls': repoCli.ls(args); break;
