@@ -1,13 +1,32 @@
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
 const ROOT_DIR = path.join(__dirname, '..', '..');
+const DATA_DIR = path.join(ROOT_DIR, 'data');
+const DEVICE_ID_FILE = path.join(DATA_DIR, 'device-id');
+
+// Persist DEVICE_ID across restarts — it is used as the encryption key for user data.
+// Priority: env var > file > auto-generate and save
+function getDeviceId() {
+  if (process.env.DEVICE_ID) return process.env.DEVICE_ID;
+  try {
+    if (fs.existsSync(DEVICE_ID_FILE)) return fs.readFileSync(DEVICE_ID_FILE, 'utf8').trim();
+  } catch {}
+  // Generate and persist a new ID
+  const id = require('uuid').v4();
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(DEVICE_ID_FILE, id, 'utf8');
+  } catch {}
+  return id;
+}
 
 module.exports = {
   PORT: process.env.PORT || 3000,
   BIND_ADDRESS: process.env.BIND_ADDRESS || '127.0.0.1',
   DEVICE_NAME: process.env.DEVICE_NAME || os.hostname(),
-  DEVICE_ID: process.env.DEVICE_ID || require('uuid').v4(),
+  DEVICE_ID: getDeviceId(),
   UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(ROOT_DIR, 'file'),
   ROOT_DIR,
   MDNS_SERVICE_TYPE: '_transferhd._tcp',
