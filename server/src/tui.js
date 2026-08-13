@@ -265,7 +265,7 @@ class Tui {
   }
 
   _autocomplete() {
-    const cmds = ['help', 'status', 'users', 'config', 'clear', 'stop', 'restart', 'ls', 'tree', 'du', 'info', 'mkdir', 'rm'];
+    const cmds = ['help', 'status', 'users', 'config', 'clear', 'stop', 'restart', 'ls', 'tree', 'info', 'mkdir', 'rm'];
     const input = this.currentInput.toLowerCase();
     const matches = cmds.filter(c => c.startsWith(input));
     if (matches.length === 1) {
@@ -335,6 +335,9 @@ class Tui {
     output += this._kv('SMTP', status.smtp || 'Not configured');
     output += this._kv('WS Clients', String(status.wsClients || 0));
     output += this._kv('Storage', status.storage || '-');
+    if (status.diskUsage) {
+      output += this._kv('Disk Usage', status.diskUsage);
+    }
     if (status.registrationOpen !== undefined) {
       output += this._kv('Registration', status.registrationOpen ? sgr(38, 5, 46) + 'Open' + reset() : sgr(38, 5, 196) + 'Closed' + reset());
     }
@@ -421,7 +424,6 @@ class Tui {
       ['config', 'Show current configuration'],
       ['ls [path]', 'List files in repository'],
       ['tree [path]', 'Show directory tree'],
-      ['du [path]', 'Show disk usage'],
       ['info <path>', 'Show file/directory details'],
       ['mkdir <path>', 'Create a directory'],
       ['rm <path>', 'Delete file/directory (requires -y)'],

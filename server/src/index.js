@@ -77,6 +77,22 @@ function getLanIPs() {
   return ips;
 }
 
+function getDiskUsage() {
+  try {
+    let totalSize = 0, fileCount = 0;
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name.startsWith('.')) continue;
+        const p = path.join(dir, entry.name);
+        if (entry.isDirectory()) { walk(p); }
+        else if (entry.isFile()) { totalSize += fs.statSync(p).size; fileCount++; }
+      }
+    };
+    if (fs.existsSync(config.UPLOAD_DIR)) walk(config.UPLOAD_DIR);
+    return repoCli.formatSize(totalSize) + ` (${fileCount} files)`;
+  } catch { return '-'; }
+}
+
 // ============ Middleware ============
 app.set('trust proxy', true);
 app.disable('x-powered-by');
@@ -573,7 +589,7 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           return;
         case 'ls': repoCli.ls(args); break;
         case 'tree': repoCli.tree(args); break;
-        case 'du': repoCli.du(args); break;
+        
         case 'info': args ? repoCli.info(args) : tui.log('Usage: info <path>'); break;
         case 'rm':
           if (!args) { tui.log('Usage: rm <path>'); break; }
@@ -589,9 +605,9 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
         default: tui.log(`Unknown command: ${command}, type help for available commands`);
       }
     },
-    onShutdown: () => shutdown('CLI'),
+    onShutdown: () => shutdown('TUI'),
     onRestart: () => {
-      shutdown('CLI');
+      shutdown('TUI');
       require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
     },
   });
