@@ -453,7 +453,7 @@ app.get('/api/users/:userId/public/download-encrypted', async (req, res) => {
 });
 
 // ============ Upload ============
-const UPLOAD_COOLDOWN = 60 * 1000;
+const UPLOAD_COOLDOWN = 10 * 1000;
 const lastUploadTime = new Map();
 const upload = fileServer.createUploadHandler();
 

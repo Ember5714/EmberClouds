@@ -401,7 +401,9 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
         url = `${API}/files/download?path=${encodeURIComponent(previewFile.path)}&visibility=${visibility}`
       }
       try {
-        const res = await api(url)
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
         if (!res.ok) return
         const blob = await res.blob()
         if (!cancelled) setPreviewUrl(URL.createObjectURL(blob))
@@ -569,7 +571,9 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     }
 
     try {
-      const response = await api(url)
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
       if (!response.ok) {
         const err = await response.text()
         toast(t('downloadFailed').replace('{msg}', err || `HTTP ${response.status}`), 'error')
