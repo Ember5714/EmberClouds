@@ -610,6 +610,10 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
   // Redirect repo-cli output to TUI
   repoCli.setLogger(msg => tui.log(msg));
 
+  // Redirect console.log to TUI log panel (so verification codes etc. are visible)
+  const _origConsoleLog = console.log;
+  console.log = (...args) => { tui.log(args.join(' ')); _origConsoleLog.apply(console, args); };
+
   tui.start();
   tui.log(`Server started on ${config.BIND_ADDRESS}:${config.PORT}`);
   tui.log(`Device: ${config.DEVICE_NAME}`);
