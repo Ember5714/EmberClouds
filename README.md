@@ -85,7 +85,7 @@ To go public: open the avatar menu → toggle "Public repo" → switch to the pu
 
 ### Server TUI
 
-The server features a full-color terminal dashboard with real-time status updates, device discovery, and a log panel. Commands are entered at the `> ` prompt with Tab autocomplete and arrow-key history:
+The server features a full-color terminal dashboard with real-time status updates, device discovery, and a log panel. Navigate with arrow keys — no typing required:
 
 | Command | Description |
 |---------|-------------|
@@ -93,14 +93,14 @@ The server features a full-color terminal dashboard with real-time status update
 | `users` | List all registered users |
 | `ls [path]` | List files in a directory |
 | `tree [path]` | Show directory tree |
-| `mkdir <path>` | Create a directory |
-| `rm <path>` | Delete a file or directory (use `rm -y <path>` to confirm) |
-| `du [path]` | Show disk usage |
 | `info <path>` | Show file/directory details |
+| `mkdir <path>` | Create a directory |
+| `rm <path>` | Delete a file or directory |
 | `config` | Show current configuration |
 | `clear` | Clear the message log |
-| `help` | Show available commands |
 | `stop` / `restart` | Stop or restart the server |
+
+Press `L` to open the full log viewer — scroll with ↑↓, press Esc to return. Press Ctrl+C to shutdown.
 
 ### Public Access (frp)
 
@@ -326,7 +326,7 @@ set SMTP_PASS=your_smtp_password
 
 ### 服务端 TUI
 
-服务端启动后会显示全彩终端仪表盘，实时展示运行状态、网络信息和设备发现。在 `> ` 提示符下输入命令，支持 Tab 自动补全和方向键历史回溯：
+服务端启动后会显示全彩终端仪表盘，实时展示运行状态、网络信息和设备发现。上下键选择菜单项，无需手动输入命令：
 
 | 命令 | 功能描述 |
 |------|--------|
@@ -334,14 +334,14 @@ set SMTP_PASS=your_smtp_password
 | `users` | 查看已注册用户列表 |
 | `ls [路径]` | 列出目录内容 |
 | `tree [路径]` | 以树形结构展示目录层级 |
-| `mkdir <路径>` | 创建目录 |
-| `rm <路径>` | 删除文件或目录（需用 `rm -y <路径>` 确认） |
-| `du [路径]` | 统计磁盘空间占用 |
 | `info <路径>` | 查看文件或目录的详细信息 |
+| `mkdir <路径>` | 创建目录 |
+| `rm <路径>` | 删除文件或目录 |
 | `config` | 查看当前运行配置 |
 | `clear` | 清空日志面板 |
-| `help` | 显示可用命令 |
 | `stop` / `restart` | 停止 / 重启服务器 |
+
+按 `L` 键打开完整日志查看器，↑↓ 滚动翻阅，Esc 返回。按 Ctrl+C 关闭服务器。
 
 ### 公网访问（frp）
 
@@ -567,7 +567,7 @@ set SMTP_PASS=your_smtp_password
 
 ### 伺服器 TUI
 
-伺服器啟動後會顯示全彩終端儀表板，即時展示執行狀態、網路資訊和裝置發現。在 `> ` 提示符下輸入命令，支援 Tab 自動補全和方向鍵歷史回溯：
+伺服器啟動後會顯示全彩終端儀表板，即時展示執行狀態、網路資訊和裝置發現。上下鍵選擇選單項目，無需手動輸入指令：
 
 | 命令 | 功能描述 |
 |------|--------|
@@ -575,14 +575,14 @@ set SMTP_PASS=your_smtp_password
 | `users` | 檢視已註冊用戶列表 |
 | `ls [路徑]` | 列出目錄內容 |
 | `tree [路徑]` | 以樹狀結構展示目錄層級 |
-| `mkdir <路徑>` | 建立目錄 |
-| `rm <路徑>` | 刪除檔案或目錄（需用 `rm -y <路徑>` 確認） |
-| `du [路徑]` | 統計磁碟空間佔用 |
 | `info <路徑>` | 檢視檔案或目錄的詳細資訊 |
+| `mkdir <路徑>` | 建立目錄 |
+| `rm <路徑>` | 刪除檔案或目錄 |
 | `config` | 檢視目前執行設定 |
 | `clear` | 清空日誌面板 |
-| `help` | 顯示可用命令 |
 | `stop` / `restart` | 停止 / 重新啟動伺服器 |
+
+按 `L` 鍵開啟完整日誌檢視器，↑↓ 捲動翻閱，Esc 返回。按 Ctrl+C 關閉伺服器。
 
 ### 公網存取（frp）
 

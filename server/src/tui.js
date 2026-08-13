@@ -186,6 +186,10 @@ class Tui {
     this._argInput = '';
     this._argForCmd = null;
     this._visibleItems = 6;
+
+    // Log viewer
+    this._logMode = false;
+    this._logScroll = 0;
   }
 
   log(msg) {
@@ -253,6 +257,28 @@ class Tui {
         return;
       }
 
+      // Log mode
+      if (this._logMode) {
+        if (key === '\x1b') {
+          this._logMode = false;
+          this._logScroll = 0;
+          this.render();
+          return;
+        }
+        if (key === '\x1b[A') {
+          this._logScroll = Math.max(0, this._logScroll - 1);
+          this.render();
+          return;
+        }
+        if (key === '\x1b[B') {
+          const maxScroll = Math.max(0, this.messages.length - this._logVisibleLines());
+          this._logScroll = Math.min(maxScroll, this._logScroll + 1);
+          this.render();
+          return;
+        }
+        return;
+      }
+
       // Menu navigation mode
       if (key === '\x1b[A') {
         this._selectedIndex = Math.max(0, this._selectedIndex - 1);
@@ -268,6 +294,13 @@ class Tui {
       }
       if (key === '\r' || key === '\n') {
         this._selectMenuItem();
+        return;
+      }
+      // L key — enter log viewer
+      if (key === 'l' || key === 'L') {
+        this._logMode = true;
+        this._logScroll = Math.max(0, this.messages.length - this._logVisibleLines());
+        this.render();
         return;
       }
     });
@@ -307,6 +340,12 @@ class Tui {
     } else if (this._selectedIndex >= this._menuScrollOffset + this._visibleItems) {
       this._menuScrollOffset = this._selectedIndex - this._visibleItems + 1;
     }
+  }
+
+  _logVisibleLines() {
+    // Calculate how many log lines fit in the menu area
+    const linesForMenu = Math.min(this._menuItems.length, this._visibleItems) + 3;
+    return Math.max(0, linesForMenu - 2); // Reserve 2 lines for header + hint
   }
 
   // ========== Resize ==========
@@ -402,7 +441,29 @@ class Tui {
 
     // === Menu / Input ===
     output += renderDivider(w, '═') + '\n';
-    if (this._argMode) {
+    if (this._logMode) {
+      output += sgr(1, 38, 5, 226) + '  ⬡ Log Viewer' + reset() + sgr(38, 5, 240) + ' — Esc to close' + reset() + '\n';
+      output += renderDivider(w, '─') + '\n';
+      const visible = this._logVisibleLines();
+      if (this.messages.length === 0) {
+        output += '  ' + sgr(38, 5, 240) + '(no messages)' + reset() + '\n';
+      } else {
+        const start = this._logScroll;
+        const end = Math.min(start + visible, this.messages.length);
+        for (let i = start; i < end; i++) {
+          const padding = Math.max(0, w - 4 - this.messages[i].replace(/\x1b\[[0-9;]*m/g, '').length);
+          output += '  ' + sgr(38, 5, 240) + this.messages[i] + reset() + '\n';
+        }
+      }
+      // Fill remaining lines
+      const shown = Math.min(visible, this.messages.length - this._logScroll);
+      for (let i = shown; i < visible; i++) output += '\n';
+      if (this.messages.length > visible) {
+        output += sgr(38, 5, 240) + '  (' + (this._logScroll + 1) + '-' + Math.min(this._logScroll + visible, this.messages.length) + '/' + this.messages.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ scroll  Esc back' + reset();
+      } else {
+        output += sgr(38, 5, 240) + '  ↑↓ scroll  Esc back' + reset();
+      }
+    } else if (this._argMode) {
       output += sgr(38, 5, 240) + '  Enter path for ' + sgr(1, 38, 5, 226) + this._argForCmd.cmd + reset() + sgr(38, 5, 240) + ' | Esc to cancel' + reset() + '\n';
       output += sgr(38, 5, 226) + '  ' + this._argForCmd.cmd + ' ' + reset() + this._argInput;
     } else {
@@ -419,9 +480,9 @@ class Tui {
         }
       }
       if (this._menuItems.length > this._visibleItems) {
-        output += sgr(38, 5, 240) + '  (' + (this._selectedIndex + 1) + '/' + this._menuItems.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ navigate  Enter select  Ctrl+C quit' + reset() + '\n';
+        output += sgr(38, 5, 240) + '  (' + (this._selectedIndex + 1) + '/' + this._menuItems.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ nav  Enter select  L log  Ctrl+C quit' + reset() + '\n';
       } else {
-        output += sgr(38, 5, 240) + '  ↑↓ navigate  Enter select  Ctrl+C quit' + reset() + '\n';
+        output += sgr(38, 5, 240) + '  ↑↓ nav  Enter select  L log  Ctrl+C quit' + reset() + '\n';
       }
     }
 
