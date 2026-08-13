@@ -28,6 +28,40 @@ function getFileIcon(_category, isDir) {
   return '[FILE]'
 }
 
+// MIME type fallback — used when server doesn't provide X-Enc-Mime-Type header
+function getMimeType(fileName) {
+  const ext = String(fileName || '').split('.').pop().toLowerCase()
+  const map = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+    webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp', ico: 'image/x-icon',
+    mp4: 'video/mp4', webm: 'video/webm', avi: 'video/x-msvideo', mov: 'video/quicktime',
+    mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac',
+    pdf: 'application/pdf',
+    zip: 'application/zip', rar: 'application/x-rar-compressed', '7z': 'application/x-7z-compressed',
+    tar: 'application/x-tar', gz: 'application/gzip', bz2: 'application/x-bzip2',
+    txt: 'text/plain', md: 'text/markdown', csv: 'text/csv', log: 'text/plain',
+    json: 'application/json', xml: 'application/xml', yaml: 'text/yaml', yml: 'text/yaml',
+    html: 'text/html', htm: 'text/html', css: 'text/css',
+    js: 'application/javascript', mjs: 'application/javascript',
+    ts: 'text/typescript', tsx: 'text/typescript', jsx: 'text/javascript',
+    py: 'text/x-python', java: 'text/x-java-source', c: 'text/x-c', cpp: 'text/x-c++',
+    h: 'text/x-c', hpp: 'text/x-c++', cs: 'text/plain', go: 'text/plain',
+    rs: 'text/plain', rb: 'text/x-ruby', php: 'text/x-php', swift: 'text/plain',
+    kt: 'text/plain', scala: 'text/plain', lua: 'text/plain', r: 'text/plain',
+    sh: 'text/x-sh', bat: 'text/plain', ps1: 'text/plain',
+    doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    exe: 'application/x-msdownload', msi: 'application/x-msdownload',
+    apk: 'application/vnd.android.package-archive', dmg: 'application/x-apple-diskimage',
+    ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2',
+    sql: 'application/sql', db: 'application/octet-stream',
+    toml: 'text/plain', ini: 'text/plain', cfg: 'text/plain', conf: 'text/plain',
+    env: 'text/plain', lock: 'text/plain',
+  }
+  return map[ext] || 'application/octet-stream'
+}
+
 // ============ API 请求封装（自动带 token） ============
 function api(method, path, body, isFormData) {
   const headers = {}
@@ -585,6 +619,8 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
       const originalName = decodeURIComponent(
         response.headers.get('X-Enc-Original-Name') || item.name
       )
+      // Read MIME type from server, fallback to extension-based detection
+      const mimeType = response.headers.get('X-Enc-Mime-Type') || getMimeType(originalName)
 
       if (!encKeyB64 || !encIvB64) {
         toast(t('missingEncryptionKey'), 'error')
@@ -612,7 +648,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
       const decompressed = await new Response(ds.readable).arrayBuffer()
 
       // 触发浏览器保存
-      const blob = new Blob([decompressed])
+      const blob = new Blob([decompressed], { type: mimeType })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = originalName

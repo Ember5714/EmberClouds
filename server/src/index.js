@@ -415,7 +415,7 @@ function streamDownload(req, res, userId, visibility, filePath, encrypted) {
       ? fileServer.createEncryptedDownloadStream(userId, visibility, filePath)
       : fileServer.createDownloadStream(userId, visibility, filePath, req.headers.range);
     if (encrypted) {
-      res.set({ 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(dl.fileName)}`, 'X-Enc-Key': dl.keyB64, 'X-Enc-IV': dl.ivB64, 'X-Enc-Original-Name': encodeURIComponent(dl.fileName) });
+      res.set({ 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(dl.fileName)}`, 'X-Enc-Key': dl.keyB64, 'X-Enc-IV': dl.ivB64, 'X-Enc-Original-Name': encodeURIComponent(dl.fileName), 'X-Enc-Mime-Type': dl.mimeType });
     } else {
       res.set(dl.headers); res.status(dl.statusCode);
     }
