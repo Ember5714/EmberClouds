@@ -542,6 +542,7 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
       smtp: config.SMTP_HOST ? config.SMTP_HOST + ' (configured)' : '',
       wsClients: wsServer.getClientCount(),
       storage: config.UPLOAD_DIR,
+      diskUsage: getDiskUsage(),
       registrationOpen: config.REGISTRATION_OPEN,
       lanIPs: getLanIPs(),
       publicIP: publicIP,
@@ -553,7 +554,6 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
       const args = rest.join(' ');
 
       switch (command) {
-        case 'help': tui.showHelp(); break;
         case 'status': {
           const ips = getLanIPs();
           tui.log(`Device: ${config.DEVICE_NAME} | Port: ${config.PORT} | WS: ${wsServer.getClientCount()} clients`);
@@ -584,8 +584,7 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           return;
         case 'restart':
           tui.log('Restarting...');
-          shutdown('TUI');
-          require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
+          restartServer();
           return;
         case 'ls': repoCli.ls(args); break;
         case 'tree': repoCli.tree(args); break;
@@ -602,14 +601,10 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           }
           break;
         case 'mkdir': args ? repoCli.mkdir(args) : tui.log('Usage: mkdir <path>'); break;
-        default: tui.log(`Unknown command: ${command}, type help for available commands`);
       }
     },
     onShutdown: () => shutdown('TUI'),
-    onRestart: () => {
-      shutdown('TUI');
-      require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
-    },
+    onRestart: () => { restartServer(); },
   });
 
   // Redirect repo-cli output to TUI
@@ -639,6 +634,20 @@ function shutdown(signal) {
   discovery.stop();
   server.close();
   process.exit(0);
+}
+
+function restartServer() {
+  if (server._tui) {
+    server._tui.stop();
+    server._tui = null;
+  }
+  process.stdout.write('\n');
+  console.log('[Server] Restarting...');
+  discovery.stop();
+  server.close(() => {
+    require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
+    process.exit(0);
+  });
 }
 
 userSystem._loadUsers = async () => {

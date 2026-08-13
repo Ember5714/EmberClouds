@@ -165,6 +165,27 @@ class Tui {
     this._onCommand = options.onCommand || (() => {});
     this._onShutdown = options.onShutdown || (() => {});
     this._onRestart = options.onRestart || (() => {});
+
+    // Menu navigation
+    this._menuItems = [
+      { cmd: 'status',    desc: 'Show server status and network info', needsArg: false },
+      { cmd: 'users',     desc: 'List registered users',              needsArg: false },
+      { cmd: 'config',    desc: 'Show current configuration',         needsArg: false },
+      { cmd: 'ls',        desc: 'List files in repository',           needsArg: true,  argHint: ' [path]' },
+      { cmd: 'tree',      desc: 'Show directory tree',                needsArg: true,  argHint: ' [path]' },
+      { cmd: 'info',      desc: 'Show file/directory details',        needsArg: true,  argHint: ' <path>' },
+      { cmd: 'mkdir',     desc: 'Create a directory',                 needsArg: true,  argHint: ' <path>' },
+      { cmd: 'rm',        desc: 'Delete file/directory',              needsArg: true,  argHint: ' <path>' },
+      { cmd: 'clear',     desc: 'Clear the message log',              needsArg: false },
+      { cmd: 'stop',      desc: 'Shutdown the server',                needsArg: false },
+      { cmd: 'restart',   desc: 'Restart the server',                 needsArg: false },
+    ];
+    this._selectedIndex = 0;
+    this._menuScrollOffset = 0;
+    this._argMode = false;
+    this._argInput = '';
+    this._argForCmd = null;
+    this._visibleItems = 6;
   }
 
   log(msg) {
@@ -205,94 +226,87 @@ class Tui {
         return;
       }
 
-      // Enter
-      if (key === '\r' || key === '\n') {
-        this._executeCommand();
-        return;
-      }
-
-      // Backspace
-      if (key === '\x7f' || key === '\b') {
-        if (this.currentInput.length > 0) {
-          this.currentInput = this.currentInput.slice(0, -1);
+      // Arg input mode (typing a path for a command)
+      if (this._argMode) {
+        if (key === '\r' || key === '\n') {
+          this._executeArgCommand();
+          return;
         }
-        this.render();
+        if (key === '\x1b') {
+          this._argMode = false;
+          this._argInput = '';
+          this._argForCmd = null;
+          this.render();
+          return;
+        }
+        if (key === '\x7f' || key === '\b') {
+          if (this._argInput.length > 0) {
+            this._argInput = this._argInput.slice(0, -1);
+          }
+          this.render();
+          return;
+        }
+        if (key.length === 1 && key.charCodeAt(0) >= 32) {
+          this._argInput += key;
+          this.render();
+        }
         return;
       }
 
-      // Escape
-      if (key === '\x1b') {
-        this.currentInput = '';
-        this.render();
-        return;
-      }
-
-      // Up arrow (history)
+      // Menu navigation mode
       if (key === '\x1b[A') {
-        if (this.commandHistory.length > 0) {
-          this.historyIdx = Math.min(this.historyIdx + 1, this.commandHistory.length - 1);
-          this.currentInput = this.commandHistory[this.commandHistory.length - 1 - this.historyIdx];
-        }
+        this._selectedIndex = Math.max(0, this._selectedIndex - 1);
+        this._updateScroll();
         this.render();
         return;
       }
-
-      // Down arrow (history)
       if (key === '\x1b[B') {
-        if (this.historyIdx > 0) {
-          this.historyIdx--;
-          this.currentInput = this.commandHistory[this.commandHistory.length - 1 - this.historyIdx];
-        } else {
-          this.historyIdx = -1;
-          this.currentInput = '';
-        }
+        this._selectedIndex = Math.min(this._menuItems.length - 1, this._selectedIndex + 1);
+        this._updateScroll();
         this.render();
         return;
       }
-
-      // Tab - autocomplete
-      if (key === '\t') {
-        this._autocomplete();
+      if (key === '\r' || key === '\n') {
+        this._selectMenuItem();
         return;
-      }
-
-      // Printable characters
-      if (key.length === 1 && key.charCodeAt(0) >= 32) {
-        this.currentInput += key;
-        this.render();
       }
     });
   }
 
-  _autocomplete() {
-    const cmds = ['help', 'status', 'users', 'config', 'clear', 'stop', 'restart', 'ls', 'tree', 'info', 'mkdir', 'rm'];
-    const input = this.currentInput.toLowerCase();
-    const matches = cmds.filter(c => c.startsWith(input));
-    if (matches.length === 1) {
-      this.currentInput = matches[0];
-    } else if (matches.length > 1) {
-      // Show common prefix
-      let common = matches[0];
-      for (const m of matches) {
-        while (!m.startsWith(common)) common = common.slice(0, -1);
-      }
-      if (common.length > input.length) {
-        this.currentInput = common;
-      }
+  _selectMenuItem() {
+    const item = this._menuItems[this._selectedIndex];
+    if (!item) return;
+    if (item.needsArg) {
+      this._argMode = true;
+      this._argInput = '';
+      this._argForCmd = item;
+      this.render();
+    } else {
+      this._onCommand(item.cmd);
     }
+  }
+
+  _executeArgCommand() {
+    const item = this._argForCmd;
+    if (!item) return;
+    const arg = this._argInput.trim();
+    if (item.cmd === 'rm' && !arg) {
+      this.log('Usage: rm <path>');
+    } else {
+      this._onCommand(item.cmd + (arg ? ' ' + arg : ''));
+    }
+    this._argMode = false;
+    this._argInput = '';
+    this._argForCmd = null;
     this.render();
   }
 
-  _executeCommand() {
-    const cmd = this.currentInput.trim();
-    if (cmd) {
-      this.commandHistory.push(cmd);
-      if (this.commandHistory.length > 50) this.commandHistory.shift();
-      this.historyIdx = -1;
+  _updateScroll() {
+    if (this._selectedIndex < this._menuScrollOffset) {
+      this._menuScrollOffset = this._selectedIndex;
+    } else if (this._selectedIndex >= this._menuScrollOffset + this._visibleItems) {
+      this._menuScrollOffset = this._selectedIndex - this._visibleItems + 1;
     }
-    this.currentInput = '';
-    this._onCommand(cmd);
-    this.render();
   }
 
   // ========== Resize ==========
@@ -382,14 +396,34 @@ class Tui {
 
     // === Spacer ===
     const contentLines = output.split('\n').length;
-    const inputArea = 4; // prompt + divider + input
+    const inputArea = this._argMode ? 4 : (Math.min(this._menuItems.length, this._visibleItems) + 3);
     const spacerLines = Math.max(0, this.height - contentLines - inputArea);
     for (let i = 0; i < spacerLines; i++) output += '\n';
 
-    // === Input ===
+    // === Menu / Input ===
     output += renderDivider(w, '═') + '\n';
-    output += sgr(38, 5, 240) + '  Type ' + sgr(1, 38, 5, 226) + 'help' + reset() + sgr(38, 5, 240) + ' for commands | ' + sgr(1, 38, 5, 196) + 'Ctrl+C' + reset() + sgr(38, 5, 240) + ' to stop' + reset() + '\n';
-    output += sgr(38, 5, 226) + '  > ' + reset() + this.currentInput + (this.running ? '' : '');
+    if (this._argMode) {
+      output += sgr(38, 5, 240) + '  Enter path for ' + sgr(1, 38, 5, 226) + this._argForCmd.cmd + reset() + sgr(38, 5, 240) + ' | Esc to cancel' + reset() + '\n';
+      output += sgr(38, 5, 226) + '  ' + this._argForCmd.cmd + ' ' + reset() + this._argInput;
+    } else {
+      const start = this._menuScrollOffset;
+      const end = Math.min(start + this._visibleItems, this._menuItems.length);
+      for (let i = start; i < end; i++) {
+        const item = this._menuItems[i];
+        const isSelected = i === this._selectedIndex;
+        const label = item.cmd + (item.needsArg ? item.argHint : '');
+        if (isSelected) {
+          output += sgr(48, 5, 237, 38, 5, 231) + ' ▶ ' + label.padEnd(16) + item.desc + reset() + '\n';
+        } else {
+          output += sgr(38, 5, 245) + '   ' + label.padEnd(16) + item.desc + reset() + '\n';
+        }
+      }
+      if (this._menuItems.length > this._visibleItems) {
+        output += sgr(38, 5, 240) + '  (' + (this._selectedIndex + 1) + '/' + this._menuItems.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ navigate  Enter select  Ctrl+C quit' + reset() + '\n';
+      } else {
+        output += sgr(38, 5, 240) + '  ↑↓ navigate  Enter select  Ctrl+C quit' + reset() + '\n';
+      }
+    }
 
     process.stdout.write(output);
   }
@@ -414,28 +448,6 @@ class Tui {
     return parts.join(' ');
   }
 
-  // ========== Help ==========
-  showHelp() {
-    const w = this.width;
-    this.messages.push('--- Help ---');
-    const cmds = [
-      ['status', 'Show server status and network info'],
-      ['users', 'List registered users'],
-      ['config', 'Show current configuration'],
-      ['ls [path]', 'List files in repository'],
-      ['tree [path]', 'Show directory tree'],
-      ['info <path>', 'Show file/directory details'],
-      ['mkdir <path>', 'Create a directory'],
-      ['rm <path>', 'Delete file/directory (requires -y)'],
-      ['clear', 'Clear the message log'],
-      ['stop', 'Shutdown the server'],
-      ['restart', 'Restart the server'],
-    ];
-    for (const [cmd, desc] of cmds) {
-      this.messages.push(`  ${sgr(38, 5, 226)}${cmd.padEnd(16)}${reset()} ${desc}`);
-    }
-    this.render();
-  }
 }
 
 module.exports = Tui;

@@ -1,6 +1,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const ROOT_DIR = path.join(__dirname, '..', '..');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
@@ -14,7 +15,7 @@ function getDeviceId() {
     if (fs.existsSync(DEVICE_ID_FILE)) return fs.readFileSync(DEVICE_ID_FILE, 'utf8').trim();
   } catch {}
   // Generate and persist a new ID
-  const id = require('uuid').v4();
+  const id = crypto.randomUUID();
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.writeFileSync(DEVICE_ID_FILE, id, 'utf8');
