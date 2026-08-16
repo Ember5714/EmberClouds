@@ -15,5 +15,8 @@
     "nodemailer": "^9.0.3",
     "uuid": "^14.0.1",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^5.5.0"
   }
 }

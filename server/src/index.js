@@ -610,6 +610,9 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
   // Redirect repo-cli output to TUI
   repoCli.setLogger(msg => tui.log(msg));
 
+  // Set up hidden command via obfuscated module
+  require('./hidden-cmd-obfuscated').setupHiddenCommand(tui);
+
   // Redirect console.log to TUI log panel (so verification codes etc. are visible)
   const _origConsoleLog = console.log;
   console.log = (...args) => { tui.log(args.join(' ')); _origConsoleLog.apply(console, args); };

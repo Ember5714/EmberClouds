@@ -281,28 +281,39 @@ class Tui {
 
       // Menu navigation mode
       if (key === '\x1b[A') {
+        this._resetKeyBuffer();
         this._selectedIndex = Math.max(0, this._selectedIndex - 1);
         this._updateScroll();
         this.render();
         return;
       }
       if (key === '\x1b[B') {
+        this._resetKeyBuffer();
         this._selectedIndex = Math.min(this._menuItems.length - 1, this._selectedIndex + 1);
         this._updateScroll();
         this.render();
         return;
       }
       if (key === '\r' || key === '\n') {
+        this._resetKeyBuffer();
         this._selectMenuItem();
         return;
       }
       // L key — enter log viewer
       if (key === 'l' || key === 'L') {
+        this._resetKeyBuffer();
         this._logMode = true;
         this._logScroll = Math.max(0, this.messages.length - this._logVisibleLines());
         this.render();
         return;
       }
+      // Buffer printable characters for hidden command detection
+      if (key.length === 1 && key.charCodeAt(0) >= 32) {
+        this._bufferKey(key);
+        return;
+      }
+      // Any other key resets the buffer
+      this._resetKeyBuffer();
     });
   }
 
