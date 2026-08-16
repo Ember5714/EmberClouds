@@ -8,6 +8,9 @@
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
   <a href="https://github.com/Ember5714/EmberClouds/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/react-18-61dafb" alt="React">
+  [![Stars](https://img.shields.io/github/stars/Hex-Dragon/PCL2?style=flat&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTggLjI1YS43NS43NSAwIDAgMSAuNjczLjQxOGwxLjg4MiAzLjgxNSA0LjIxLjYxMmEuNzUuNzUgMCAwIDEgLjQxNiAxLjI3OWwtMy4wNDYgMi45Ny43MTkgNC4xOTJhLjc1MS43NTEgMCAwIDEtMS4wODguNzkxTDggMTIuMzQ3bC0zLjc2NiAxLjk4YS43NS43NSAwIDAgMS0xLjA4OC0uNzlsLjcyLTQuMTk0TC44MTggNi4zNzRhLjc1Ljc1IDAgMCAxIC40MTYtMS4yOGw0LjIxLS42MTFMNy4zMjcuNjY4QS43NS43NSAwIDAgMSA4IC4yNVoiIGZpbGw9IiNlYWM1NGYiLz48L3N2Zz4=&logoSize=auto&label=Stars&labelColor=444444&color=eac54f)](https://github.com/Hex-Dragon/PCL2/)
+[![Issues](https://img.shields.io/github/issues/Hex-Dragon/PCL2?style=flat&label=Issues&labelColor=444444&color=1F883D)](https://github.com/Hex-Dragon/PCL2/issues)
+[![哔哩哔哩](https://img.shields.io/badge/动态-BiliBili-00A4DB?style=flat&labelColor=444444&logoSize=auto)](https://space.bilibili.com/11343203/dynamic)
 </p>
 
 <p align="center">
@@ -740,4 +743,8 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 ### 相關連結
 
 - 嗶哩嗶哩: [@@Ember5714](https://space.bilibili.com/3493086938270254)
-- 抖音: [@Ember5714](https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w)
+- 抖音: [@Ember5714](https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w)  
+
+==以下为arg游戏元素，切勿当真==
+总共做了三次，终于%2525e6%252588%252590%2525e5%25258a%25259f%2525e4%2525ba%252586
+有一个一直未公开的命令现在说一下，是01100100-01100101-01101100-01100101-01110100-01100101，然后它可以^^被删掉了，但是建议不要使用，可能会发生一些意外者么会能锟斤拷锟斤拷锟1斤拷&
