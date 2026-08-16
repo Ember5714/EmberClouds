@@ -1,4 +1,4 @@
-# Embercloud  
+# Emberclouds
 
 <p align="center">
   <strong>LAN File Transfer &amp; Sharing Platform</strong>
@@ -6,13 +6,13 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
-  <a href="https://github.com/Ember5714/EmberClouds?tab=MIT-1-ov-file"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
+  <a href="https://github.com/Ember5714/EmberClouds/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/react-18-61dafb" alt="React">
 </p>
 
 <p align="center">
   <a href="https://space.bilibili.com/3493086938270254"><img src="https://img.shields.io/badge/bilibili-00A1D6?logo=bilibili&logoColor=white" alt="Bilibili"></a>
-  <a href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w"><img src="https://img.shields.io/badge/douyin-000000?logo=tiktok&logoColor=white" alt="抖音（Douyin）"></a>
+  <a href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w"><img src="https://img.shields.io/badge/douyin-000000?logo=tiktok&logoColor=white" alt="抖音(douyin)"></a>
 </p>
 
 ---
@@ -36,7 +36,7 @@ A self-hosted LAN file server built with Node.js + React. Think of it as your pe
 - **Download** — HTTP Range support for resumable downloads
 - **Image preview** — click any image to open a full-size lightbox
 - **Dark theme** — auto (follows system settings) or manual toggle
-- **Server CLI** — full admin panel in the console: manage users, browse files, check disk usage
+- **Server TUI** — real-time dashboard with color logo, live status, device discovery, and file management
 - **Public access** — built-in frp config for exposing your server to the internet via a VPS
 - **Auto-setup** — `start.bat` detects missing dependencies and installs them automatically
 
@@ -45,8 +45,8 @@ A self-hosted LAN file server built with Node.js + React. Think of it as your pe
 **Prerequisites:** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/transfer-hard-disk.git
-cd transfer-hard-disk
+git clone https://github.com/yourname/emberclouds.git
+cd emberclouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
@@ -55,7 +55,7 @@ cd ../server && npm start
 
 On Windows, just double-click `start.bat` — it handles everything.
 
-Open `http://localhost:3000`. Other devices on the LAN use `http://<your-ip>:3000`.
+Open `http://localhost:3000`. To allow other devices on the LAN, set `BIND_ADDRESS=0.0.0.0` then use `http://<your-ip>:3000`.
 
 **First-time setup:**
 
@@ -66,7 +66,7 @@ Open `http://localhost:3000`. Other devices on the LAN use `http://<your-ip>:300
 ### SMTP Email Setup
 
 ```bat
-set SMTP_HOST=smtp.example.com
+set SMTP_HOST=smtp.qq.com
 set SMTP_PORT=587
 set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
@@ -83,26 +83,24 @@ If SMTP is not configured, verification codes are printed to the server console.
 
 To go public: open the avatar menu → toggle "Public repo" → switch to the public space and upload files → other users can now find you via search.
 
-### Server CLI
+### Server TUI
 
-Commands available at the `> ` prompt:
+The server features a full-color terminal dashboard with real-time status updates, device discovery, and a log panel. Navigate with arrow keys — no typing required:
 
 | Command | Description |
 |---------|-------------|
-| `status` | Show server status |
+| `status` | Show server status and network info |
 | `users` | List all registered users |
-| `delete-user` | Delete a user account |
-| `change-email` | Change a user's email |
 | `ls [path]` | List files in a directory |
 | `tree [path]` | Show directory tree |
-| `mkdir <path>` | Create a directory |
-| `rm <path>` | Delete a file or directory (confirmation required) |
-| `du [path]` | Show disk usage |
 | `info <path>` | Show file/directory details |
+| `mkdir <path>` | Create a directory |
+| `rm <path>` | Delete a file or directory |
 | `config` | Show current configuration |
-| `moveto <path>` | Migrate storage to a new location |
-| `help` | Show this help |
+| `clear` | Clear the message log |
 | `stop` / `restart` | Stop or restart the server |
+
+Press `L` to open the full log viewer — scroll with ↑↓, press Esc to return. Press Ctrl+C to shutdown.
 
 ### Public Access (frp)
 
@@ -127,13 +125,17 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 ├── server/                 # Backend (Express)
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # Entry point + API routes + CLI
+│       ├── index.js        # Entry point + API routes + TUI
+│       ├── tui.js           # Terminal UI (color dashboard + commands)
 │       ├── config.js       # Configuration
 │       ├── auth.js         # Token authentication
-│       ├── users.js        # User system
+│       ├── users.js        # User system (encrypted data storage)
 │       ├── fileServer.js   # File storage & upload
-│       ├── repo-cli.js     # CLI file management commands
-│       ├── discovery.js    # LAN device discovery (mDNS)
+│       ├── fileCrypto.js   # AES-256-CTR at-rest file encryption
+│       ├── fileLock.js     # Concurrent write queue lock
+│       ├── rateLimit.js    # IP-based rate limiting
+│       ├── repo-cli.js     # TUI file management commands
+│       ├── discovery.js    # LAN device discovery (HMAC-signed UDP)
 │       └── wsServer.js     # WebSocket notifications
 ├── client/                 # Frontend (React + Vite)
 │   ├── package.json
@@ -149,9 +151,10 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 ├── file/                   # File storage (gitignored)
 │   ├── private/{userId}/
 │   └── public/{userId}/
-├── data/                   # User data (gitignored)
+├── data/                   # User data (gitignored, AES-256-GCM encrypted)
 │   ├── users.json
 │   ├── tokens.json
+│   ├── refresh_tokens.json
 │   ├── avatars/
 │   ├── backgrounds/
 │   └── profiles/
@@ -168,15 +171,18 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 | POST | `/api/auth/verify` | Verify email |
 | POST | `/api/auth/resend` | Resend verification code |
 | POST | `/api/auth/login` | Login |
+| POST | `/api/auth/refresh` | Refresh access token |
 | POST | `/api/auth/logout` | Logout |
 | GET | `/api/auth/me` | Get current user info |
 | PATCH | `/api/auth/profile` | Toggle public profile |
 | PATCH | `/api/auth/password` | Change password |
+| POST | `/api/auth/send-op-code` | Send operation verification code |
 | PATCH | `/api/auth/username` | Change username |
 | PATCH | `/api/auth/signature` | Update status message |
 | POST | `/api/auth/avatar` | Upload avatar |
 | POST | `/api/auth/profile-background` | Upload cover image |
 | GET | `/api/auth/profile-bio` | Get own bio |
+| PUT | `/api/auth/profile-bio` | Save own bio |
 | DELETE | `/api/auth/account` | Delete account |
 | POST | `/api/auth/send-reset-code` | Send password reset code |
 | POST | `/api/auth/reset-password` | Reset password |
@@ -187,12 +193,15 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 |--------|------|-------------|
 | GET | `/api/files/browse` | Browse files |
 | POST | `/api/files/upload` | Upload files (multipart) |
-| GET | `/api/files/download` | Download file |
+| GET | `/api/files/download` | Download file (encrypted) |
+| GET | `/api/files/download-encrypted` | Download file (encrypted, with key) |
 | POST | `/api/files/mkdir` | Create folder |
 | POST | `/api/files/rename` | Rename |
 | DELETE | `/api/files` | Delete |
 
 #### Public Users
+
+> All endpoints require login.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -200,22 +209,24 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 | GET | `/api/users/:id/profile` | Get user profile |
 | GET | `/api/users/:id/profile/bio` | Get user bio |
 | GET | `/api/users/:id/public/browse` | Browse public files |
-| GET | `/api/users/:id/public/download` | Download public file |
+| GET | `/api/users/:id/public/download` | Download public file (encrypted) |
+| GET | `/api/users/:id/public/download-encrypted` | Download public file (encrypted, with key) |
 | POST | `/api/users/:id/copytome` | Copy to your private repo |
 
 #### System
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/ping` | Health check |
-| GET | `/api/self` | Server device info |
-| GET | `/api/diagnose` | Network diagnostics |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/ping` | Required | Health check |
+| GET | `/api/self` | Required | Server device info |
+| GET | `/api/diagnose` | Required | Diagnostics (summary only) |
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | Server port | `3000` |
+| `BIND_ADDRESS` | Bind address (`127.0.0.1` = local only, `0.0.0.0` = LAN) | `127.0.0.1` |
 | `DEVICE_NAME` | Device display name | Hostname |
 | `UPLOAD_DIR` | Storage root | `file/` |
 | `MAX_FILE_SIZE` | Max single file size (bytes, 0 = unlimited) | `0` |
@@ -232,10 +243,10 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 They need to enable "Public repo" in their avatar menu first.
 
 **Can't access from other devices on LAN?**
-Restart `start.bat` to auto-register the firewall rule, or run:
+Ensure `BIND_ADDRESS=0.0.0.0` is configured, then restart `start.bat` to auto-register the firewall rule, or manually run:
 
 ```powershell
-netsh advfirewall firewall add rule name="TransferHardDisk-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
 ```
 
 **Upload fails with too many files?**
@@ -253,7 +264,7 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 
 ## 简体中文
 
-基于 Node.js + React 构建的文件共享平台.
+基于 Node.js + React 构建的局域网文件共享平台。部署在本地主机上，同一局域网内的所有设备均可通过浏览器直接访问，无需将文件上传至任何第三方云端服务。
 
 ### 功能特性
 
@@ -266,7 +277,7 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 - **文件下载** — 基于 HTTP Range 协议实现断点续传
 - **图片预览** — 点击图片弹出灯箱查看原图
 - **深色模式** — 支持跟随系统主题自动切换，亦可手动切换
-- **命令行管理** — 服务端控制台提供完整的运维管理能力，包括用户管理、文件浏览、磁盘占用统计等
+- **终端仪表盘** — 全彩 TUI 实时仪表盘，展示运行状态、设备发现、日志面板，支持 Tab 补全和方向键历史
 - **公网接入** — 内置 frp 反向代理配置，配合 VPS 即可将服务暴露至公网
 - **开箱即用** — `start.bat` 一键启动，自动检测并安装缺失的依赖
 
@@ -275,8 +286,8 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 **环境要求：** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/transfer-hard-disk.git
-cd transfer-hard-disk
+git clone https://github.com/yourname/emberclouds.git
+cd emberclouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
@@ -285,7 +296,7 @@ cd ../server && npm start
 
 Windows 系统下可直接双击 `start.bat`，脚本将自动完成依赖安装与前端构建。
 
-通过浏览器访问 `http://localhost:3000`。局域网内其他设备可通过 `http://<本机IP>:3000` 访问。
+通过浏览器访问 `http://localhost:3000`。若需局域网内其他设备访问，需设置 `BIND_ADDRESS=0.0.0.0`，然后通过 `http://<本机IP>:3000` 访问。
 
 **首次使用流程：**
 
@@ -296,7 +307,7 @@ Windows 系统下可直接双击 `start.bat`，脚本将自动完成依赖安装
 ### SMTP 邮件配置
 
 ```bat
-set SMTP_HOST=smtp.example.com
+set SMTP_HOST=smtp.qq.com
 set SMTP_PORT=587
 set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
@@ -313,26 +324,24 @@ set SMTP_PASS=your_smtp_password
 
 开启公开仓库：点击头像 → 开启"公开仓库" → 切换至公开空间上传文件 → 其他用户可通过用户名搜索到您。
 
-### 服务端 CLI
+### 服务端 TUI
 
-在服务端控制台 `> ` 提示符下可执行以下命令：
+服务端启动后会显示全彩终端仪表盘，实时展示运行状态、网络信息和设备发现。上下键选择菜单项，无需手动输入命令：
 
 | 命令 | 功能描述 |
 |------|--------|
-| `status` | 查看服务器运行状态 |
+| `status` | 查看服务器运行状态和网络信息 |
 | `users` | 查看已注册用户列表 |
-| `delete-user` | 注销指定用户账号 |
-| `change-email` | 修改用户绑定邮箱 |
-| `ls [路径]` | 列出目录内容，默认显示根目录 |
+| `ls [路径]` | 列出目录内容 |
 | `tree [路径]` | 以树形结构展示目录层级 |
-| `mkdir <路径>` | 创建目录 |
-| `rm <路径>` | 删除文件或目录（需二次确认） |
-| `du [路径]` | 统计磁盘空间占用 |
 | `info <路径>` | 查看文件或目录的详细信息 |
+| `mkdir <路径>` | 创建目录 |
+| `rm <路径>` | 删除文件或目录 |
 | `config` | 查看当前运行配置 |
-| `moveto <路径>` | 迁移存储目录至新位置 |
-| `help` | 显示帮助信息 |
+| `clear` | 清空日志面板 |
 | `stop` / `restart` | 停止 / 重启服务器 |
+
+按 `L` 键打开完整日志查看器，↑↓ 滚动翻阅，Esc 返回。按 Ctrl+C 关闭服务器。
 
 ### 公网访问（frp）
 
@@ -357,13 +366,17 @@ set SMTP_PASS=your_smtp_password
 ├── server/                 # 后端服务（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模块 + API 路由 + CLI 交互
+│       ├── index.js        # 入口模块 + API 路由 + TUI 交互
+│       ├── tui.js           # 终端仪表盘（彩色面板 + 命令交互）
 │       ├── config.js       # 全局配置
 │       ├── auth.js         # Token 身份认证
-│       ├── users.js        # 用户系统逻辑
+│       ├── users.js        # 用户系统逻辑（加密数据存储）
 │       ├── fileServer.js   # 文件存储与上传处理
-│       ├── repo-cli.js     # CLI 仓库管理命令
-│       ├── discovery.js    # 局域网设备发现（mDNS）
+│       ├── fileCrypto.js   # AES-256-CTR 静态文件加密
+│       ├── fileLock.js     # 并发写入队列锁
+│       ├── rateLimit.js    # IP 频率限制
+│       ├── repo-cli.js     # TUI 仓库管理命令
+│       ├── discovery.js    # 局域网设备发现（HMAC 签名 UDP）
 │       └── wsServer.js     # WebSocket 消息推送
 ├── client/                 # 前端应用（React + Vite）
 │   ├── package.json
@@ -379,9 +392,10 @@ set SMTP_PASS=your_smtp_password
 ├── file/                   # 文件存储目录（已加入 .gitignore）
 │   ├── private/{userId}/
 │   └── public/{userId}/
-├── data/                   # 用户数据目录（已加入 .gitignore）
+├── data/                   # 用户数据目录（已加入 .gitignore，AES-256-GCM 加密）
 │   ├── users.json
 │   ├── tokens.json
+│   ├── refresh_tokens.json
 │   ├── avatars/
 │   ├── backgrounds/
 │   └── profiles/
@@ -398,15 +412,18 @@ set SMTP_PASS=your_smtp_password
 | POST | `/api/auth/verify` | 验证邮箱 |
 | POST | `/api/auth/resend` | 重新发送验证码 |
 | POST | `/api/auth/login` | 登录 |
+| POST | `/api/auth/refresh` | 刷新访问令牌 |
 | POST | `/api/auth/logout` | 登出 |
 | GET | `/api/auth/me` | 获取当前用户信息 |
 | PATCH | `/api/auth/profile` | 切换公开资料可见性 |
 | PATCH | `/api/auth/password` | 修改密码 |
+| POST | `/api/auth/send-op-code` | 发送操作验证码 |
 | PATCH | `/api/auth/username` | 修改用户名 |
 | PATCH | `/api/auth/signature` | 修改个性签名 |
 | POST | `/api/auth/avatar` | 上传头像 |
 | POST | `/api/auth/profile-background` | 上传个人主页背景 |
 | GET | `/api/auth/profile-bio` | 获取个人简介 |
+| PUT | `/api/auth/profile-bio` | 保存个人简介 |
 | DELETE | `/api/auth/account` | 注销账号 |
 | POST | `/api/auth/send-reset-code` | 发送密码重置验证码 |
 | POST | `/api/auth/reset-password` | 重置密码 |
@@ -417,12 +434,15 @@ set SMTP_PASS=your_smtp_password
 |--------|------|------|
 | GET | `/api/files/browse` | 浏览文件 |
 | POST | `/api/files/upload` | 上传文件（multipart/form-data） |
-| GET | `/api/files/download` | 下载文件 |
+| GET | `/api/files/download` | 下载文件（加密传输） |
+| GET | `/api/files/download-encrypted` | 下载文件（加密传输，带密钥） |
 | POST | `/api/files/mkdir` | 新建文件夹 |
 | POST | `/api/files/rename` | 重命名文件或文件夹 |
 | DELETE | `/api/files` | 删除文件或文件夹 |
 
 #### 公开用户模块
+
+> 所有接口均需登录。
 
 | 方法 | 路径 | 说明 |
 |--------|------|------|
@@ -430,22 +450,24 @@ set SMTP_PASS=your_smtp_password
 | GET | `/api/users/:id/profile` | 查看用户个人资料 |
 | GET | `/api/users/:id/profile/bio` | 查看用户个人简介 |
 | GET | `/api/users/:id/public/browse` | 浏览用户公开文件 |
-| GET | `/api/users/:id/public/download` | 下载用户公开文件 |
+| GET | `/api/users/:id/public/download` | 下载用户公开文件（加密传输） |
+| GET | `/api/users/:id/public/download-encrypted` | 下载用户公开文件（加密传输，带密钥） |
 | POST | `/api/users/:id/copytome` | 复制公开文件至私密仓库 |
 
 #### 系统模块
 
-| 方法 | 路径 | 说明 |
-|--------|------|------|
-| GET | `/api/ping` | 健康检查 |
-| GET | `/api/self` | 获取服务器设备信息 |
-| GET | `/api/diagnose` | 网络诊断 |
+| 方法 | 路径 | 认证 | 说明 |
+|--------|------|------|------|
+| GET | `/api/ping` | 需要 | 健康检查 |
+| GET | `/api/self` | 需要 | 获取服务器设备信息 |
+| GET | `/api/diagnose` | 需要 | 诊断信息（仅摘要） |
 
 ### 环境变量
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `PORT` | 服务监听端口 | `3000` |
+| `BIND_ADDRESS` | 绑定地址（`127.0.0.1` = 仅本机，`0.0.0.0` = 局域网） | `127.0.0.1` |
 | `DEVICE_NAME` | 设备显示名称 | 主机名 |
 | `UPLOAD_DIR` | 文件存储根目录 | `file/` |
 | `MAX_FILE_SIZE` | 单文件大小上限（字节，0 表示不限制） | `0` |
@@ -462,10 +484,10 @@ set SMTP_PASS=your_smtp_password
 目标用户需先在头像菜单中开启"公开仓库"功能。
 
 **局域网内其他设备无法访问？**
-重启 `start.bat` 将自动注册 Windows 防火墙规则；亦可手动执行：
+确保已设置 `BIND_ADDRESS=0.0.0.0`，重启 `start.bat` 将自动注册 Windows 防火墙规则；亦可手动执行：
 
 ```powershell
-netsh advfirewall firewall add rule name="TransferHardDisk-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
 ```
 
 **上传文件数量过多导致失败？**
@@ -496,7 +518,7 @@ netsh advfirewall firewall add rule name="TransferHardDisk-Port" dir=in action=a
 - **檔案下載** — 基於 HTTP Range 協定實現斷點續傳
 - **圖片預覽** — 點擊圖片彈出燈箱檢視原圖
 - **深色模式** — 支援跟隨系統主題自動切換，亦可手動切換
-- **命令列管理** — 伺服器主控台提供完整的維運管理能力，包括用戶管理、檔案瀏覽、磁碟佔用統計等
+- **終端儀表板** — 全彩 TUI 即時儀表板，展示執行狀態、裝置發現、日誌面板，支援 Tab 補全和方向鍵歷史
 - **公網接入** — 內建 frp 反向代理設定，配合 VPS 即可將服務暴露至公網
 - **開箱即用** — `start.bat` 一鍵啟動，自動偵測並安裝缺失的依賴
 
@@ -505,8 +527,8 @@ netsh advfirewall firewall add rule name="TransferHardDisk-Port" dir=in action=a
 **環境要求：** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/transfer-hard-disk.git
-cd transfer-hard-disk
+git clone https://github.com/yourname/emberclouds.git
+cd emberclouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
@@ -515,7 +537,7 @@ cd ../server && npm start
 
 Windows 系統下可直接雙擊 `start.bat`，指令碼將自動完成依賴安裝與前端構建。
 
-透過瀏覽器存取 `http://localhost:3000`。區域網路內其他裝置可透過 `http://<本機IP>:3000` 存取。
+透過瀏覽器存取 `http://localhost:3000`。若需區域網路內其他裝置存取，需設定 `BIND_ADDRESS=0.0.0.0`，然後透過 `http://<本機IP>:3000` 存取。
 
 **首次使用流程：**
 
@@ -526,7 +548,7 @@ Windows 系統下可直接雙擊 `start.bat`，指令碼將自動完成依賴安
 ### SMTP 郵件設定
 
 ```bat
-set SMTP_HOST=smtp.example.com
+set SMTP_HOST=smtp.qq.com
 set SMTP_PORT=587
 set SMTP_USER=your@example.com
 set SMTP_PASS=your_smtp_password
@@ -543,26 +565,24 @@ set SMTP_PASS=your_smtp_password
 
 開啟公開倉庫：點擊頭像 → 開啟「公開倉庫」→ 切換至公開空間上傳檔案 → 其他用戶可透過使用者名稱搜尋到您。
 
-### 伺服器 CLI
+### 伺服器 TUI
 
-在伺服器主控台 `> ` 提示符下可執行以下命令：
+伺服器啟動後會顯示全彩終端儀表板，即時展示執行狀態、網路資訊和裝置發現。上下鍵選擇選單項目，無需手動輸入指令：
 
 | 命令 | 功能描述 |
 |------|--------|
-| `status` | 檢視伺服器執行狀態 |
+| `status` | 檢視伺服器執行狀態和網路資訊 |
 | `users` | 檢視已註冊用戶列表 |
-| `delete-user` | 註銷指定用戶帳號 |
-| `change-email` | 修改用戶綁定電子郵件 |
-| `ls [路徑]` | 列出目錄內容，預設顯示根目錄 |
+| `ls [路徑]` | 列出目錄內容 |
 | `tree [路徑]` | 以樹狀結構展示目錄層級 |
-| `mkdir <路徑>` | 建立目錄 |
-| `rm <路徑>` | 刪除檔案或目錄（需二次確認） |
-| `du [路徑]` | 統計磁碟空間佔用 |
 | `info <路徑>` | 檢視檔案或目錄的詳細資訊 |
+| `mkdir <路徑>` | 建立目錄 |
+| `rm <路徑>` | 刪除檔案或目錄 |
 | `config` | 檢視目前執行設定 |
-| `moveto <路徑>` | 遷移儲存目錄至新位置 |
-| `help` | 顯示幫助資訊 |
+| `clear` | 清空日誌面板 |
 | `stop` / `restart` | 停止 / 重新啟動伺服器 |
+
+按 `L` 鍵開啟完整日誌檢視器，↑↓ 捲動翻閱，Esc 返回。按 Ctrl+C 關閉伺服器。
 
 ### 公網存取（frp）
 
@@ -587,13 +607,17 @@ set SMTP_PASS=your_smtp_password
 ├── server/                 # 後端服務（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模組 + API 路由 + CLI 互動
+│       ├── index.js        # 入口模組 + API 路由 + TUI 互動
+│       ├── tui.js           # 終端儀表板（彩色面板 + 命令互動）
 │       ├── config.js       # 全域設定
 │       ├── auth.js         # Token 身份認證
-│       ├── users.js        # 用戶系統邏輯
+│       ├── users.js        # 用戶系統邏輯（加密資料儲存）
 │       ├── fileServer.js   # 檔案儲存與上傳處理
-│       ├── repo-cli.js     # CLI 倉庫管理命令
-│       ├── discovery.js    # 區域網路裝置發現（mDNS）
+│       ├── fileCrypto.js   # AES-256-CTR 靜態檔案加密
+│       ├── fileLock.js     # 並發寫入佇列鎖
+│       ├── rateLimit.js    # IP 頻率限制
+│       ├── repo-cli.js     # TUI 倉庫管理命令
+│       ├── discovery.js    # 區域網路裝置發現（HMAC 簽名 UDP）
 │       └── wsServer.js     # WebSocket 訊息推送
 ├── client/                 # 前端應用（React + Vite）
 │   ├── package.json
@@ -609,9 +633,10 @@ set SMTP_PASS=your_smtp_password
 ├── file/                   # 檔案儲存目錄（已加入 .gitignore）
 │   ├── private/{userId}/
 │   └── public/{userId}/
-├── data/                   # 用戶資料目錄（已加入 .gitignore）
+├── data/                   # 用戶資料目錄（已加入 .gitignore，AES-256-GCM 加密）
 │   ├── users.json
 │   ├── tokens.json
+│   ├── refresh_tokens.json
 │   ├── avatars/
 │   ├── backgrounds/
 │   └── profiles/
@@ -628,15 +653,18 @@ set SMTP_PASS=your_smtp_password
 | POST | `/api/auth/verify` | 驗證電子郵件 |
 | POST | `/api/auth/resend` | 重新發送驗證碼 |
 | POST | `/api/auth/login` | 登入 |
+| POST | `/api/auth/refresh` | 重新整理存取權杖 |
 | POST | `/api/auth/logout` | 登出 |
 | GET | `/api/auth/me` | 取得目前用戶資訊 |
 | PATCH | `/api/auth/profile` | 切換公開資料可見性 |
 | PATCH | `/api/auth/password` | 修改密碼 |
+| POST | `/api/auth/send-op-code` | 發送操作驗證碼 |
 | PATCH | `/api/auth/username` | 修改使用者名稱 |
 | PATCH | `/api/auth/signature` | 修改個性簽名 |
 | POST | `/api/auth/avatar` | 上傳頭像 |
 | POST | `/api/auth/profile-background` | 上傳個人主頁背景 |
 | GET | `/api/auth/profile-bio` | 取得個人簡介 |
+| PUT | `/api/auth/profile-bio` | 儲存個人簡介 |
 | DELETE | `/api/auth/account` | 註銷帳號 |
 | POST | `/api/auth/send-reset-code` | 發送密碼重設驗證碼 |
 | POST | `/api/auth/reset-password` | 重設密碼 |
@@ -647,12 +675,15 @@ set SMTP_PASS=your_smtp_password
 |--------|------|------|
 | GET | `/api/files/browse` | 瀏覽檔案 |
 | POST | `/api/files/upload` | 上傳檔案（multipart/form-data） |
-| GET | `/api/files/download` | 下載檔案 |
+| GET | `/api/files/download` | 下載檔案（加密傳輸） |
+| GET | `/api/files/download-encrypted` | 下載檔案（加密傳輸，帶金鑰） |
 | POST | `/api/files/mkdir` | 新增資料夾 |
 | POST | `/api/files/rename` | 重新命名檔案或資料夾 |
 | DELETE | `/api/files` | 刪除檔案或資料夾 |
 
 #### 公開用戶模組
+
+> 所有介面均需登入。
 
 | 方法 | 路徑 | 說明 |
 |--------|------|------|
@@ -660,22 +691,24 @@ set SMTP_PASS=your_smtp_password
 | GET | `/api/users/:id/profile` | 檢視用戶個人資料 |
 | GET | `/api/users/:id/profile/bio` | 檢視用戶個人簡介 |
 | GET | `/api/users/:id/public/browse` | 瀏覽用戶公開檔案 |
-| GET | `/api/users/:id/public/download` | 下載用戶公開檔案 |
+| GET | `/api/users/:id/public/download` | 下載用戶公開檔案（加密傳輸） |
+| GET | `/api/users/:id/public/download-encrypted` | 下載用戶公開檔案（加密傳輸，帶金鑰） |
 | POST | `/api/users/:id/copytome` | 複製公開檔案至私密倉庫 |
 
 #### 系統模組
 
-| 方法 | 路徑 | 說明 |
-|--------|------|------|
-| GET | `/api/ping` | 健康檢查 |
-| GET | `/api/self` | 取得伺服器裝置資訊 |
-| GET | `/api/diagnose` | 網路診斷 |
+| 方法 | 路徑 | 認證 | 說明 |
+|--------|------|------|------|
+| GET | `/api/ping` | 需要 | 健康檢查 |
+| GET | `/api/self` | 需要 | 取得伺服器裝置資訊 |
+| GET | `/api/diagnose` | 需要 | 診斷資訊（僅摘要） |
 
 ### 環境變數
 
 | 變數 | 說明 | 預設值 |
 |------|------|--------|
 | `PORT` | 服務監聽埠號 | `3000` |
+| `BIND_ADDRESS` | 綁定位址（`127.0.0.1` = 僅本機，`0.0.0.0` = 區域網路） | `127.0.0.1` |
 | `DEVICE_NAME` | 裝置顯示名稱 | 主機名稱 |
 | `UPLOAD_DIR` | 檔案儲存根目錄 | `file/` |
 | `MAX_FILE_SIZE` | 單檔案大小上限（位元組，0 表示不限制） | `0` |
@@ -692,10 +725,10 @@ set SMTP_PASS=your_smtp_password
 目標用戶需先在頭像選單中開啟「公開倉庫」功能。
 
 **區域網路內其他裝置無法存取？**
-重新啟動 `start.bat` 將自動註冊 Windows 防火牆規則；亦可手動執行：
+確保已設定 `BIND_ADDRESS=0.0.0.0`，重新啟動 `start.bat` 將自動註冊 Windows 防火牆規則；亦可手動執行：
 
 ```powershell
-netsh advfirewall firewall add rule name="TransferHardDisk-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
 ```
 
 **上傳檔案數量過多導致失敗？**
