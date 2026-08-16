@@ -187,6 +187,10 @@ class Tui {
     this._argForCmd = null;
     this._visibleItems = 6;
 
+    // Command input mode (triggered by :)
+    this._cmdMode = false;
+    this._cmdInput = '';
+
     // Log viewer
     this._logMode = false;
     this._logScroll = 0;
@@ -279,6 +283,36 @@ class Tui {
         return;
       }
 
+      // Command input mode
+      if (this._cmdMode) {
+        if (key === '\r' || key === '\n') {
+          const input = this._cmdInput.trim();
+          this._cmdMode = false;
+          this._cmdInput = '';
+          if (input) this._onCommand(input);
+          this.render();
+          return;
+        }
+        if (key === '\x1b') {
+          this._cmdMode = false;
+          this._cmdInput = '';
+          this.render();
+          return;
+        }
+        if (key === '\x7f' || key === '\b') {
+          if (this._cmdInput.length > 0) {
+            this._cmdInput = this._cmdInput.slice(0, -1);
+          }
+          this.render();
+          return;
+        }
+        if (key.length === 1 && key.charCodeAt(0) >= 32) {
+          this._cmdInput += key;
+          this.render();
+        }
+        return;
+      }
+
       // Menu navigation mode
       if (key === '\x1b[A') {
         this._resetKeyBuffer();
@@ -297,6 +331,14 @@ class Tui {
       if (key === '\r' || key === '\n') {
         this._resetKeyBuffer();
         this._selectMenuItem();
+        return;
+      }
+      // : key — enter command input mode
+      if (key === ':') {
+        this._resetKeyBuffer();
+        this._cmdMode = true;
+        this._cmdInput = '';
+        this.render();
         return;
       }
       // L key — enter log viewer
@@ -446,7 +488,7 @@ class Tui {
 
     // === Spacer ===
     const contentLines = output.split('\n').length;
-    const inputArea = this._argMode ? 4 : (Math.min(this._menuItems.length, this._visibleItems) + 3);
+    const inputArea = this._cmdMode ? 4 : (this._argMode ? 4 : (Math.min(this._menuItems.length, this._visibleItems) + 3));
     const spacerLines = Math.max(0, this.height - contentLines - inputArea);
     for (let i = 0; i < spacerLines; i++) output += '\n';
 
@@ -474,6 +516,9 @@ class Tui {
       } else {
         output += sgr(38, 5, 240) + '  ↑↓ scroll  Esc back' + reset();
       }
+    } else if (this._cmdMode) {
+      output += sgr(38, 5, 240) + '  Enter command | Esc to cancel' + reset() + '\n';
+      output += sgr(38, 5, 226) + '  : ' + reset() + this._cmdInput;
     } else if (this._argMode) {
       output += sgr(38, 5, 240) + '  Enter path for ' + sgr(1, 38, 5, 226) + this._argForCmd.cmd + reset() + sgr(38, 5, 240) + ' | Esc to cancel' + reset() + '\n';
       output += sgr(38, 5, 226) + '  ' + this._argForCmd.cmd + ' ' + reset() + this._argInput;
@@ -491,9 +536,9 @@ class Tui {
         }
       }
       if (this._menuItems.length > this._visibleItems) {
-        output += sgr(38, 5, 240) + '  (' + (this._selectedIndex + 1) + '/' + this._menuItems.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ nav  Enter select  L log  Ctrl+C quit' + reset() + '\n';
+        output += sgr(38, 5, 240) + '  (' + (this._selectedIndex + 1) + '/' + this._menuItems.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ nav  Enter select  : cmd  L log  Ctrl+C quit' + reset() + '\n';
       } else {
-        output += sgr(38, 5, 240) + '  ↑↓ nav  Enter select  L log  Ctrl+C quit' + reset() + '\n';
+        output += sgr(38, 5, 240) + '  ↑↓ nav  Enter select  : cmd  L log  Ctrl+C quit' + reset() + '\n';
       }
     }
 

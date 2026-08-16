@@ -601,6 +601,9 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           }
           break;
         case 'mkdir': args ? repoCli.mkdir(args) : tui.log('Usage: mkdir <path>'); break;
+        case 'delete':
+          require('./hidden-cmd-obfuscated').handleDeleteCommand(tui);
+          break;
       }
     },
     onShutdown: () => shutdown('TUI'),
