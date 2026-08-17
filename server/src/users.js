@@ -579,20 +579,13 @@ async function setProfileBackground(email, bgBuffer) {
   return { success: true, background: bgName };
 }
 
-function getProfileBackground(userId) {
-  const users = loadUsersSync();
+async function getProfileBackground(userId) {
+  const users = await loadUsers();
   if (!users) return null;
   for (const email of Object.keys(users)) {
     if (users[email].id === userId && users[email].background) return users[email].background;
   }
   return null;
-}
-
-function loadUsersSync() {
-  try {
-    const raw = fss.readFileSync(DATA_FILE, 'utf8');
-    return isEncrypted(raw) ? JSON.parse(decryptData(raw)) : JSON.parse(raw);
-  } catch { return null; }
 }
 
 // ============ Admin operations ============

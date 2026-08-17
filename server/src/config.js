@@ -25,7 +25,7 @@ function getDeviceId() {
 
 module.exports = {
   PORT: process.env.PORT || 3000,
-  BIND_ADDRESS: process.env.BIND_ADDRESS || '127.0.0.1',
+  BIND_ADDRESS: process.env.BIND_ADDRESS || '0.0.0.0',
   DEVICE_NAME: process.env.DEVICE_NAME || os.hostname(),
   DEVICE_ID: getDeviceId(),
   UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(ROOT_DIR, 'file'),
