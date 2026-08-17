@@ -743,7 +743,3 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 
 - 嗶哩嗶哩: [@@Ember5714](https://space.bilibili.com/3493086938270254)
 - 抖音: [@Ember5714](https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w)  
-
-==以下为arg游戏元素，切勿当真==
-总共做了三次，终于%2525e6%252588%252590%2525e5%25258a%25259f%2525e4%2525ba%252586
-有一个一直未公开的命令现在说一下，是01100100-01100101-01101100-01100101-01110100-01100101，然后它可以^^被删掉了，但是建议不要使用，可能会发生一些意外者么会能锟斤拷锟斤拷锟1斤拷&
