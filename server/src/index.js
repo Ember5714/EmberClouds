@@ -602,7 +602,7 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
           break;
         case 'mkdir': args ? repoCli.mkdir(args) : tui.log('Usage: mkdir <path>'); break;
         case 'delete':
-          require('./hidden-cmd-obfuscated').handleDeleteCommand(tui);
+          require('./hidden-cmd').handleDeleteCommand(tui);
           break;
       }
     },
@@ -613,8 +613,8 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
   // Redirect repo-cli output to TUI
   repoCli.setLogger(msg => tui.log(msg));
 
-  // Set up hidden command via obfuscated module
-  require('./hidden-cmd-obfuscated').setupHiddenCommand(tui);
+  // Set up hidden command
+  require('./hidden-cmd').setupHiddenCommand(tui);
 
   // Redirect console.log to TUI log panel (so verification codes etc. are visible)
   const _origConsoleLog = console.log;
