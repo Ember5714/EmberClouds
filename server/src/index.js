@@ -24,7 +24,7 @@ const server = http.createServer(app);
 
 // ============ Firewall ============
 function registerFirewall() {
-  const ruleExe = 'Emberclouds', rulePort = 'Emberclouds-Port';
+  const ruleExe = 'Emberclouds', rulePort = 'Emberclouds-Port', ruleDiscovery = 'Emberclouds-Discovery';
   try {
     execSync(`netsh advfirewall firewall show rule name="${ruleExe}"`, { stdio: 'ignore' });
     console.log('[Firewall] Program rule already exists');
@@ -42,6 +42,15 @@ function registerFirewall() {
       execSync(`netsh advfirewall firewall add rule name="${rulePort}" dir=in action=allow protocol=TCP localport=${config.PORT} enable=yes`, { stdio: 'ignore' });
       console.log(`[Firewall] Added port ${config.PORT} inbound rule`);
     } catch (e) { console.log('[Firewall] Failed to add port rule:', e.message); }
+  }
+  try {
+    execSync(`netsh advfirewall firewall show rule name="${ruleDiscovery}"`, { stdio: 'ignore' });
+    console.log('[Firewall] Discovery rule already exists');
+  } catch {
+    try {
+      execSync(`netsh advfirewall firewall add rule name="${ruleDiscovery}" dir=in action=allow protocol=UDP localport=3001 enable=yes`, { stdio: 'ignore' });
+      console.log('[Firewall] Added UDP 3001 discovery inbound rule');
+    } catch (e) { console.log('[Firewall] Failed to add discovery rule:', e.message); }
   }
 }
 
@@ -117,6 +126,7 @@ app.use((req, res, next) => {
     'X-XSS-Protection': '0', // Deprecated, use CSP instead
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws: wss:;",
   });
   next();
 });
@@ -313,7 +323,6 @@ app.get('/api/diagnose', (req, res) => {
 });
 
 app.get('/api/ping', (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   res.json({ ok: true, time: Date.now() });
 });
 
@@ -496,7 +505,7 @@ app.use((err, req, res, _next) => {
 
 // ============ Static files ============
 const clientDist = path.join(config.ROOT_DIR, 'client', 'dist');
-[path.join(config.ROOT_DIR, 'logo'), path.join(config.ROOT_DIR, 'data', 'avatars'), path.join(config.ROOT_DIR, 'data', 'backgrounds')].forEach(dir => {
+[path.join(config.ROOT_DIR, 'logo'), path.join(config.ROOT_DIR, 'data', 'avatars'), path.join(config.ROOT_DIR, 'data', 'backgrounds'), path.join(config.ROOT_DIR, 'data', 'tmp')].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 if (fs.existsSync(path.join(config.ROOT_DIR, 'logo'))) app.use('/logo', express.static(path.join(config.ROOT_DIR, 'logo')));
@@ -654,7 +663,4 @@ function restartServer() {
   });
 }
 
-userSystem._loadUsers = async () => {
-  try { return JSON.parse(await fs.promises.readFile(path.join(config.ROOT_DIR, 'data', 'users.json'), 'utf8')); }
-  catch { return {}; }
-};
+userSystem._loadUsers = userSystem.loadUsers;

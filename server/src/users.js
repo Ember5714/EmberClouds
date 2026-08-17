@@ -88,14 +88,31 @@ async function init() {
   }
 }
 
+// ============ User data cache ============
+let _usersCache = null;
+let _usersCacheTime = 0;
+const USERS_CACHE_TTL = 5000; // 5 seconds
+
 async function loadUsers() {
+  const now = Date.now();
+  if (_usersCache && (now - _usersCacheTime) < USERS_CACHE_TTL) return _usersCache;
   const data = await readEncrypted(DATA_FILE);
-  if (data) return data;
+  if (data) {
+    _usersCache = data;
+    _usersCacheTime = now;
+    return data;
+  }
   const e = {};
   await writeEncrypted(DATA_FILE, e);
+  _usersCache = e;
+  _usersCacheTime = now;
   return e;
 }
-async function saveUsers(u) { await writeEncrypted(DATA_FILE, u); }
+async function saveUsers(u) {
+  _usersCache = u;
+  _usersCacheTime = Date.now();
+  await writeEncrypted(DATA_FILE, u);
+}
 
 async function loadTokens() {
   const data = await readEncrypted(TOKEN_FILE);
@@ -645,4 +662,4 @@ async function refreshToken(refreshToken) {
   return { token: rawToken };
 }
 
-module.exports = { init, register, verify, login, logout, resendCode, validateToken, refreshToken, setPublicProfile, searchUsers, getUserById, sendOperationCode, changePassword, changeUsername, setSignature, setAvatar, deleteAccount, sendResetCode, resetPassword, getProfileBio, saveProfileBio, setProfileBackground, getProfileBackground, adminDeleteUser, adminChangeEmail };
+module.exports = { init, register, verify, login, logout, resendCode, validateToken, refreshToken, setPublicProfile, searchUsers, getUserById, sendOperationCode, changePassword, changeUsername, setSignature, setAvatar, deleteAccount, sendResetCode, resetPassword, getProfileBio, saveProfileBio, setProfileBackground, getProfileBackground, adminDeleteUser, adminChangeEmail, loadUsers };
