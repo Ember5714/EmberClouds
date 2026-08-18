@@ -4,11 +4,14 @@
  */
 const crypto = require('crypto');
 
+const MAX_UNAUTHENTICATED = 10; // Max unauthenticated connections before rejecting new ones
+
 class WsServer {
   constructor() {
     this.wss = null;
-    this.clients = new Map(); // ws -> { id, deviceName }
-    this._tokenValidator = null; // async function(token) => user|null
+    this.clients = new Map();       // ws -> { id, username, email, authenticated }
+    this._pendingClients = new Map(); // ws -> { id, connectedAt } (unauthenticated)
+    this._tokenValidator = null;    // async function(token) => user|null
   }
 
   /** Set token validation function for WebSocket auth */
@@ -30,41 +33,53 @@ class WsServer {
     });
 
     this.wss.on('connection', (ws, req) => {
-      const clientId = crypto.randomUUID();
       const clientIp = req.socket.remoteAddress;
 
-      this.clients.set(ws, {
-        id: clientId,
-        ip: clientIp,
-        connectedAt: Date.now(),
-        authenticated: false,
-      });
+      // Reject if too many unauthenticated connections
+      if (this._pendingClients.size >= MAX_UNAUTHENTICATED) {
+        console.log(`[WS] Rejected connection from ${clientIp}: too many unauthenticated`);
+        ws.close(4013, 'Too many unauthenticated connections');
+        return;
+      }
 
-      console.log(`[WS] New client connected: ${clientId} (${clientIp})`);
-
-      this._send(ws, { type: 'connected', payload: { clientId } });
+      // Track pending client (not yet in this.clients — prevents HIGH-1)
+      const pendingId = crypto.randomUUID();
+      this._pendingClients.set(ws, { id: pendingId, connectedAt: Date.now() });
+      console.log(`[WS] Pending client connected: ${pendingId} (${clientIp})`);
 
       // Set authentication timeout — close if not authenticated within 10 seconds
       const authTimeout = setTimeout(() => {
-        const client = this.clients.get(ws);
-        if (client && !client.authenticated) {
-          console.log(`[WS] Auth timeout for client: ${clientId}`);
+        if (this._pendingClients.has(ws)) {
+          console.log(`[WS] Auth timeout for pending client: ${pendingId}`);
           this._send(ws, { type: 'error', payload: { message: 'Authentication timeout' } });
           ws.close(4001, 'Authentication timeout');
+          // CRIT-1: Force terminate if close doesn't work within 1 second
+          setTimeout(() => {
+            if (ws.readyState !== 3) {
+              try { ws.terminate(); } catch {}
+            }
+          }, 1000);
         }
       }, 10000);
 
-      ws.on('message', (data) => this._handleMessage(ws, data, authTimeout));
+      ws.on('message', (data) => this._handleMessage(ws, data, authTimeout, pendingId));
 
       ws.on('close', () => {
         clearTimeout(authTimeout);
-        console.log(`[WS] Client disconnected: ${clientId}`);
-        this.clients.delete(ws);
-        this.emit('client-disconnected', clientId);
+        this._pendingClients.delete(ws);
+        // Also clean up from authenticated clients
+        const client = this.clients.get(ws);
+        if (client) {
+          console.log(`[WS] Client disconnected: ${client.id}`);
+          this.clients.delete(ws);
+          this.emit('client-disconnected', client.id);
+        } else {
+          console.log(`[WS] Pending client disconnected: ${pendingId}`);
+        }
       });
 
       ws.on('error', (err) => {
-        console.error(`[WS] Client error: ${clientId}`, err.message);
+        console.error(`[WS] Client error: ${pendingId}`, err.message);
       });
     });
 
@@ -83,7 +98,7 @@ class WsServer {
   }
 
   /** Handle incoming messages */
-  async _handleMessage(ws, data, authTimeout) {
+  async _handleMessage(ws, data, authTimeout, pendingId) {
     try {
       const msg = JSON.parse(data.toString());
       switch (msg.type) {
@@ -92,31 +107,40 @@ class WsServer {
           if (!this._tokenValidator) {
             this._send(ws, { type: 'error', payload: { message: 'Auth not configured' } });
             ws.close(4002, 'Auth not configured');
+            setTimeout(() => { if (ws.readyState !== 3) { try { ws.terminate(); } catch {} } }, 1000);
             return;
           }
           const user = await this._tokenValidator(msg.payload?.token);
           if (!user) {
             this._send(ws, { type: 'error', payload: { message: 'Invalid token' } });
             ws.close(4003, 'Invalid token');
+            setTimeout(() => { if (ws.readyState !== 3) { try { ws.terminate(); } catch {} } }, 1000);
             return;
           }
-          const client = this.clients.get(ws);
-          if (client) {
-            client.authenticated = true;
-            client.username = user.username;
-            client.email = user.email;
-          }
+          // Move from pending to authenticated clients
+          this._pendingClients.delete(ws);
+          this.clients.set(ws, {
+            id: pendingId,
+            username: user.username,
+            email: user.email,
+            authenticated: true,
+            connectedAt: Date.now(),
+          });
           clearTimeout(authTimeout);
+          // HIGH-1: Only send connected + clientId after auth succeeds
+          this._send(ws, { type: 'connected', payload: { clientId: pendingId } });
           this._send(ws, { type: 'auth-ok', payload: { username: user.username } });
-          console.log(`[WS] Client authenticated: ${user.username}`);
+          console.log(`[WS] Client authenticated: ${user.username} (${pendingId})`);
           break;
         }
         case 'ping':
           this._send(ws, { type: 'pong' });
           break;
-        case 'device-info':
-          this.clients.get(ws).deviceName = msg.payload?.name;
+        case 'device-info': {
+          const client = this.clients.get(ws);
+          if (client) client.deviceName = msg.payload?.name;
           break;
+        }
         default:
           break;
       }
@@ -170,7 +194,7 @@ class WsServer {
     this.broadcast({ type: 'file-received', payload: fileInfo });
   }
 
-  /** Get online client count */
+  /** Get online client count (authenticated only) */
   getClientCount() {
     return this.clients.size;
   }

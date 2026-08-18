@@ -9,6 +9,9 @@ const LIMITS = {
   resend:    { max: 5,  windowMs: 15 * 60 * 1000 },  // 5 per 15 min
 };
 
+const MAX_RATE_LIMIT_ENTRIES = 10000;  // MED-1: prevent memory exhaustion
+const MAX_LOGIN_DELAY_ENTRIES = 5000;
+
 // Login failure incremental delay (seconds)
 const loginDelays = new Map(); // ip -> { failures, until }
 
@@ -25,6 +28,11 @@ function check(ip, action) {
   const now = Date.now();
   const entry = rateLimit.get(ip);
   if (!entry || now > entry.resetAt) {
+    // MED-1: evict oldest entry if at capacity
+    if (rateLimit.size >= MAX_RATE_LIMIT_ENTRIES && !rateLimit.has(ip)) {
+      const oldest = rateLimit.keys().next().value;
+      if (oldest) rateLimit.delete(oldest);
+    }
     rateLimit.set(ip, { count: 1, resetAt: now + limit.windowMs });
     return false;
   }
@@ -43,6 +51,11 @@ function getLoginDelay(ip) {
 }
 
 function recordLoginFailure(ip) {
+  // MED-1: evict oldest entry if at capacity
+  if (loginDelays.size >= MAX_LOGIN_DELAY_ENTRIES && !loginDelays.has(ip)) {
+    const oldest = loginDelays.keys().next().value;
+    if (oldest) loginDelays.delete(oldest);
+  }
   const entry = loginDelays.get(ip) || { failures: 0, until: 0 };
   entry.failures++;
   entry.until = Date.now() + Math.min(entry.failures * 2000, 30000); // max 30s

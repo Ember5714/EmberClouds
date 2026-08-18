@@ -22,6 +22,11 @@ const Tui = require('./tui');
 const app = express();
 const server = http.createServer(app);
 
+// CRIT-2: Slowloris protection — HTTP server timeouts
+server.timeout = 5000;           // 5s request timeout
+server.headersTimeout = 6000;    // 6s headers timeout
+server.keepAliveTimeout = 5000;  // 5s keep-alive timeout
+
 // ============ Firewall ============
 function registerFirewall() {
   const ruleExe = 'Emberclouds', rulePort = 'Emberclouds-Port', ruleDiscovery = 'Emberclouds-Discovery';
@@ -115,7 +120,7 @@ const corsOrigin = (origin, callback) => {
   callback(null, false);
 };
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Security headers
@@ -123,11 +128,15 @@ app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
-    'X-XSS-Protection': '0', // Deprecated, use CSP instead
+    'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws: wss:;",
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws: wss:;",
   });
+  // MED-2: HSTS for HTTPS connections
+  if (req.secure || req.protocol === 'https') {
+    res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
@@ -314,7 +323,9 @@ discovery.on('device-offline', (device) => { wsServer.sendDeviceOffline(device);
 // ============ API Routes ============
 
 app.get('/api/self', (req, res) => {
-  res.json({ id: config.DEVICE_ID, name: config.DEVICE_NAME, port: config.PORT, storage: config.UPLOAD_DIR, authEnabled: !!(config.AUTH_USER && config.AUTH_PASS), network: discovery.getNetworkInfo() });
+  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
+  // CRIT-3: Only return non-sensitive info — no DEVICE_ID or storage path
+  res.json({ name: config.DEVICE_NAME, port: config.PORT, network: discovery.getNetworkInfo() });
 });
 
 app.get('/api/diagnose', (req, res) => {
@@ -514,11 +525,20 @@ app.use('/backgrounds', express.static(path.join(config.ROOT_DIR, 'data', 'backg
 
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api/')) return next();
+  // LOW-2: API paths that don't exist should return 404, not SPA HTML
+  app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+  app.get('*', (req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
+
+// CRIT-4: entity.too.large error handler (must be after routes)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  next(err);
+});
 
 // ============ Startup ============
 registerFirewall();

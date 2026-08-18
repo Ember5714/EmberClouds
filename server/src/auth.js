@@ -7,7 +7,7 @@ const PUBLIC_PATHS = [
   '/api/auth/register', '/api/auth/verify', '/api/auth/resend',
   '/api/auth/login', '/api/auth/refresh',
   '/api/auth/send-reset-code', '/api/auth/reset-password',
-  '/api/ping', '/api/self',
+  '/api/ping',
 ];
 
 async function auth(req, res, next) {
