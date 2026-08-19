@@ -62,18 +62,54 @@ function getMimeType(fileName) {
   return map[ext] || 'application/octet-stream'
 }
 
-// ============ API 请求封装（自动带 token） ============
-function api(method, path, body, isFormData) {
+// ============ API 请求封装（自动带 token + 自动刷新） ============
+let _refreshPromise = null
+
+async function api(method, path, body, isFormData) {
   const headers = {}
   if (!isFormData) headers['Content-Type'] = 'application/json'
   const token = localStorage.getItem('token')
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  return fetch(`${API}${path}`, {
+  let r = await fetch(`${API}${path}`, {
     method,
     headers,
     body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
   })
+
+  // Auto-refresh token on 401
+  if (r.status === 401 && !path.startsWith('/auth/')) {
+    const refreshToken = localStorage.getItem('refreshToken')
+    if (refreshToken) {
+      // Deduplicate concurrent refresh attempts
+      if (!_refreshPromise) {
+        _refreshPromise = fetch(`${API}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        }).then(async (rr) => {
+          if (rr.ok) {
+            const d = await rr.json()
+            localStorage.setItem('token', d.token)
+            if (d.refreshToken) localStorage.setItem('refreshToken', d.refreshToken)
+            return d.token
+          }
+          return null
+        }).finally(() => { _refreshPromise = null })
+      }
+      const newToken = await _refreshPromise
+      if (newToken) {
+        headers['Authorization'] = `Bearer ${newToken}`
+        r = await fetch(`${API}${path}`, {
+          method,
+          headers,
+          body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
+        })
+      }
+    }
+  }
+
+  return r
 }
 
 // ============ App 入口 ============
@@ -139,18 +175,21 @@ export default function App() {
         setUser(d.user)
       } else {
         localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
       }
     }).finally(() => setChecking(false))
   }, [])
 
-  const handleLogin = (token, userData) => {
+  const handleLogin = (token, refreshToken, userData) => {
     localStorage.setItem('token', token)
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
     setUser(userData)
   }
 
   const handleLogout = async () => {
     await api('POST', '/auth/logout')
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     setUser(null)
   }
 
@@ -215,7 +254,7 @@ function LoginPage({ onLogin, t }) {
       const r = await api('POST', '/auth/login', { email: email.trim(), password })
       const d = await r.json()
       if (r.ok) {
-        onLogin(d.token, d.user)
+        onLogin(d.token, d.refreshToken, d.user)
       } else {
         setError(d.error || t('networkError'))
       }
@@ -929,6 +968,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
       if (r.ok) {
         toast(t('accountDeleted'))
         localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
         setTimeout(() => onLogout(), 1000)
       } else toast(d.error || t('deleteFailed'), 'error')
       return r.ok

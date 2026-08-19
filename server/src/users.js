@@ -348,8 +348,22 @@ async function validateToken(token) {
 // ============ Logout ============
 async function logout(token) {
   const tokens = await loadTokens();
-  delete tokens[hashToken(token)];
+  const hashedKey = hashToken(token);
+  const entry = tokens[hashedKey];
+  delete tokens[hashedKey];
   await saveTokens(tokens);
+  // Also clean up all refresh tokens for this user
+  if (entry && entry.email) {
+    const refreshTokens = await loadRefreshTokens();
+    let changed = false;
+    for (const rid of Object.keys(refreshTokens)) {
+      if (refreshTokens[rid].email === entry.email) {
+        delete refreshTokens[rid];
+        changed = true;
+      }
+    }
+    if (changed) await saveRefreshTokens(refreshTokens);
+  }
 }
 
 // ============ Public profile ============
@@ -438,6 +452,16 @@ async function changePassword(email, code, newPassword) {
 
   user.passwordHash = hashPassword(newPassword);
   await saveUsers(users);
+  // Invalidate all refresh tokens for this user after password change
+  const refreshTokens = await loadRefreshTokens();
+  let changed = false;
+  for (const rid of Object.keys(refreshTokens)) {
+    if (refreshTokens[rid].email === email) {
+      delete refreshTokens[rid];
+      changed = true;
+    }
+  }
+  if (changed) await saveRefreshTokens(refreshTokens);
   return { success: true };
 }
 
@@ -655,11 +679,18 @@ async function refreshToken(refreshToken) {
     await saveRefreshTokens(refreshTokens);
     return null;
   }
+  // 1. Delete old refresh token (rotation)
+  delete refreshTokens[hashed];
+  // 2. Generate new access token
   const rawToken = crypto.randomBytes(32).toString('hex');
   const tokens = await loadTokens();
   tokens[hashToken(rawToken)] = { email: entry.email, userId: entry.userId, createdAt: Date.now() };
+  // 3. Generate new refresh token
+  const rawRefresh = crypto.randomBytes(32).toString('hex');
+  refreshTokens[hashToken(rawRefresh)] = { email: entry.email, userId: entry.userId, createdAt: Date.now() };
   await saveTokens(tokens);
-  return { token: rawToken };
+  await saveRefreshTokens(refreshTokens);
+  return { token: rawToken, refreshToken: rawRefresh };
 }
 
 module.exports = { init, register, verify, login, logout, resendCode, validateToken, refreshToken, setPublicProfile, searchUsers, getUserById, sendOperationCode, changePassword, changeUsername, setSignature, setAvatar, deleteAccount, sendResetCode, resetPassword, getProfileBio, saveProfileBio, setProfileBackground, getProfileBackground, adminDeleteUser, adminChangeEmail, loadUsers };
