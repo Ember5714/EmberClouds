@@ -29,6 +29,10 @@ server.keepAliveTimeout = 5000;  // 5s keep-alive timeout
 
 // ============ Firewall ============
 function registerFirewall() {
+  if (process.platform !== 'win32') {
+    console.log('[Firewall] Skipped (non-Windows platform)');
+    return;
+  }
   const ruleExe = 'Emberclouds', rulePort = 'Emberclouds-Port', ruleDiscovery = 'Emberclouds-Discovery';
   try {
     execSync(`netsh advfirewall firewall show rule name="${ruleExe}"`, { stdio: 'ignore' });
@@ -546,7 +550,10 @@ const publicIPPromise = getPublicIP();
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`[ERROR] Port ${config.PORT} is already in use. Stop the other process or use: netstat -ano | findstr :${config.PORT}`);
+    const cmd = process.platform === 'win32'
+      ? `netstat -ano | findstr :${config.PORT}`
+      : `ss -tlnp | grep :${config.PORT}`;
+    console.error(`[ERROR] Port ${config.PORT} is already in use. Stop the other process or use: ${cmd}`);
     process.exit(1);
   }
   console.error('[ERROR] Server error:', err.message);
@@ -678,7 +685,14 @@ function restartServer() {
   console.log('[Server] Restarting...');
   discovery.stop();
   server.close(() => {
-    require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
+    if (process.platform === 'win32') {
+      require('child_process').exec(`start "Emberclouds" cmd /c "${path.join(config.ROOT_DIR, 'start.bat')}"`, { cwd: config.ROOT_DIR });
+    } else {
+      // Linux: re-spawn the same process
+      const { spawn } = require('child_process');
+      const child = spawn(process.argv[0], process.argv.slice(1), { cwd: config.ROOT_DIR, detached: true, stdio: 'inherit' });
+      child.unref();
+    }
     process.exit(0);
   });
 }

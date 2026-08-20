@@ -64,7 +64,10 @@ class FileServer {
         if (e.code === 'EPERM') {
           try { fs.mkdirSync(this.uploadDir, { recursive: true }); } catch (_) {
             console.error(`[FileServer] Cannot access storage: ${this.uploadDir}`);
-            console.error('[FileServer] Run as admin: icacls "' + this.uploadDir + '" /reset /T /Q');
+          const permCmd = process.platform === 'win32'
+            ? `icacls "${this.uploadDir}" /reset /T /Q`
+            : `chmod -R 755 "${this.uploadDir}"`;
+          console.error(`[FileServer] Fix permissions: ${permCmd}`);
             process.exit(1);
           }
         } else throw e;
