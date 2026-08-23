@@ -994,6 +994,8 @@ body {
 
 .profile-name-row {
   padding-bottom: 6px;
+  position: relative;
+  z-index: 1;
 }
 
 .profile-username {
