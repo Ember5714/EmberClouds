@@ -1227,17 +1227,62 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
       {isProfileView ? (
         /* ========== 个人主页 / 他人仓库 独立页面 ========== */
         <div className="profile-page">
-          <header className="profile-page-header">
-            <button className="btn-back" onClick={viewingOwnProfile ? closeOwnProfile : backToMySpace}>
-              {t('backToMyWarehouse')}
-            </button>
-            <div className="profile-page-logo"><Logo /></div>
-            <span className="profile-page-title">
-              {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
-            </span>
-            {viewingOwnProfile && (
-              <button className="btn-tool" onClick={() => setShowSettings(true)}>{t('editProfile')}</button>
-            )}
+          <header className="header">
+            <div className="header-left">
+              <button className="btn-back" onClick={viewingOwnProfile ? closeOwnProfile : backToMySpace}>
+                {t('backToMyWarehouse')}
+              </button>
+              <Logo />
+              <span className="profile-page-title">
+                {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
+              </span>
+            </div>
+            <div className="header-right">
+              {user ? (
+                <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
+                  {avatarUrl ? (
+                    <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
+                  ) : (
+                    <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
+                  )}
+                  <span className="user-name">{currentUser.username}</span>
+                  {currentUser.signature && <span className="user-signature">{currentUser.signature}</span>}
+                  {showUserMenu && (
+                    <div className="user-dropdown">
+                      <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
+                      <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
+                        {t('home')}
+                      </div>
+                      <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
+                        {t('privateWarehouse')}
+                      </div>
+                      <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
+                        {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
+                      </div>
+                      <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
+                        {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
+                      </div>
+                      {!viewingOwnProfile && (
+                        <div className="user-dropdown-item user-dropdown-profile" onClick={(e) => { e.stopPropagation(); openOwnProfile(); setShowUserMenu(false) }}>
+                          {t('profile')}
+                        </div>
+                      )}
+                      <div className="user-dropdown-item user-dropdown-settings" onClick={(e) => { e.stopPropagation(); setShowSettings(true); setShowUserMenu(false) }}>
+                        {t('accountSettings')}
+                      </div>
+                      <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
+                        {t('logout')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="home-auth-btns">
+                  <button className="btn-tool" onClick={() => navigate('/login')}>{t('login')}</button>
+                  <button className="btn-tool btn-primary" onClick={() => navigate('/register')}>{t('register')}</button>
+                </div>
+              )}
+            </div>
           </header>
 
           {profileInfo && (
