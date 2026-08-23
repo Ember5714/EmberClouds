@@ -541,6 +541,7 @@ function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang
               <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
             )}
             <span className="user-name">{currentUser.username}</span>
+            {currentUser.signature && <span className="user-signature">{currentUser.signature}</span>}
             {showUserMenu && (
               <div className="user-dropdown">
                 <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
