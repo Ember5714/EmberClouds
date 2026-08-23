@@ -529,7 +529,6 @@ function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang
 
   return (
     <div className="app">
-      <Notify />
       <header className="header">
         <div className="header-left">
           <Logo />
