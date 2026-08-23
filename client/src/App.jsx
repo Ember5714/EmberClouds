@@ -1231,7 +1231,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
 
       {isProfileView ? (
         /* ========== 个人主页 / 他人仓库 独立页面 ========== */
-        <div className="profile-page">
+        <>
           <header className="header">
             <div className="header-left">
               <Logo />
@@ -1417,7 +1417,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
               )}
             </>
           )}
-        </div>
+        </>
       ) : (
         /* ========== 正常文件浏览器 ========== */
         <>

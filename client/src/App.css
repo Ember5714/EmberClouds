@@ -891,9 +891,6 @@ body {
 }
 
 /* ============ Profile Page Layout ============ */
-.profile-page {
-  /* inherits max-width from parent .app (1100px), same as private warehouse */
-}
 
 .profile-page-logo {
   display: flex;
