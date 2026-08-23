@@ -75,6 +75,7 @@ const translations = {
     codeExpiredResend: '验证码已过期，请重新发送',
 
     // 主界面
+    home: '首页',
     privateWarehouse: '私有仓库',
     publicWarehouse: '公开仓库',
     profile: '个人主页',
@@ -177,6 +178,7 @@ const translations = {
     privateVisibility: '私密',
     downloadOriginal: '下载原图',
     searchPublicUsers: '搜索公开用户...',
+    searchSubtitle: '搜索公开用户，或通过下拉菜单进入仓库',
     search: '搜索',
     searchHistory: '搜索历史',
     clear: '清空',
@@ -333,6 +335,7 @@ const translations = {
     codeExpiredResend: 'Verification code expired, please resend',
 
     // Main interface
+    home: 'Home',
     privateWarehouse: 'Private',
     publicWarehouse: 'Public',
     profile: 'Profile',
@@ -435,6 +438,7 @@ const translations = {
     privateVisibility: 'Private',
     downloadOriginal: 'Download Original',
     searchPublicUsers: 'Search public users...',
+    searchSubtitle: 'Search public users, or use the dropdown to enter warehouse',
     search: 'Search',
     searchHistory: 'Search History',
     clear: 'Clear',

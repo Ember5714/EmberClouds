@@ -226,12 +226,13 @@ export default function App() {
   return (
     <LangContext.Provider value={{ lang, t, toggleLang }}>
     <Routes>
-      <Route path="/" element={<Navigate to="/privateWarehouse" replace />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="/home" element={<HomePage user={user} onLogout={handleLogout} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/privateWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="private" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/publicWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="public" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/profile" element={<MainApp user={user} onLogout={handleLogout} pageMode="profile" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/user/:userId" element={<MainApp user={user} onLogout={handleLogout} pageMode="user" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="*" element={<Navigate to="/privateWarehouse" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
     </LangContext.Provider>
   )
@@ -443,6 +444,238 @@ function VerifyPage({ email, onVerified, t }) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============ 首页（搜索页） ============
+function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang }) {
+  const navigate = useNavigate()
+  const { lang } = useLang()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showAbout, setShowAbout] = useState(false)
+  const [currentUser] = useState(user)
+  const userMenuRef = useRef(null)
+  const searchBarRef = useRef(null)
+
+  // Public profile
+  const [publicProfile, setPublicProfile] = useState(!!user.publicProfile)
+  const togglePublicProfile = async () => {
+    const newVal = !publicProfile
+    try {
+      const r = await api('PATCH', '/auth/profile', { publicProfile: newVal })
+      const d = await r.json()
+      if (r.ok) {
+        setPublicProfile(d.publicProfile)
+      }
+    } catch {}
+  }
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lt_search_history') || '[]') }
+    catch { return [] }
+  })
+
+  const saveSearchHistory = (query) => {
+    const trimmed = query.trim()
+    if (!trimmed) return
+    setSearchHistory((prev) => {
+      const next = [trimmed, ...prev.filter((q) => q !== trimmed)].slice(0, 10)
+      localStorage.setItem('lt_search_history', JSON.stringify(next))
+      return next
+    })
+  }
+
+  const handleSearch = async (e, queryOverride) => {
+    const query = (queryOverride !== undefined ? queryOverride : searchQuery).trim()
+    if (e?.preventDefault) e.preventDefault()
+    setSearchError('')
+    if (!query) { setSearchResults([]); return }
+    setSearching(true)
+    setSearchQuery(query)
+    saveSearchHistory(query)
+    try {
+      const r = await api('GET', `/users/search?q=${encodeURIComponent(query)}`)
+      if (!r.ok) {
+        setSearchError(t('searchFailed'))
+        setSearchResults([])
+        setSearching(false)
+        return
+      }
+      const data = await r.json()
+      setSearchResults(data)
+      if (data.length === 0) setSearchError(t('noPublicUsersFound'))
+    } catch { setSearchError(t('networkError')); setSearchResults([]) }
+    setSearching(false)
+  }
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false)
+      if (searchBarRef.current && !searchBarRef.current.contains(e.target)) setSearchFocused(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const avatarUrl = currentUser.avatar ? `/avatars/${currentUser.avatar}` : null
+
+  return (
+    <div className="app">
+      <Notify />
+      <header className="header">
+        <div className="header-left">
+          <Logo />
+        </div>
+        <div className="header-right">
+          <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
+            {avatarUrl ? (
+              <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
+            ) : (
+              <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
+            )}
+            <span className="user-name">{currentUser.username}</span>
+            {showUserMenu && (
+              <div className="user-dropdown">
+                <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
+                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
+                  {t('privateWarehouse')}
+                </div>
+                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
+                  {t('publicWarehouse')}
+                </div>
+                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
+                  {t('profile')}
+                </div>
+                <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
+                  {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
+                </div>
+                <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
+                  {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
+                </div>
+                <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
+                  {t('logout')}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* 居中搜索区域 */}
+      <div className="home-search">
+        <div className="home-search-inner">
+          <div className="home-search-title">{t('appTitle')}</div>
+          <div className="home-search-subtitle">{t('searchSubtitle')}</div>
+          <div className="search-bar home-search-bar" ref={searchBarRef}>
+            <form onSubmit={handleSearch} className="search-form">
+              <input
+                className="search-input home-search-input"
+                type="text"
+                placeholder={t('searchPublicUsers')}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  if (!e.target.value.trim()) {
+                    setSearchError('')
+                    setSearchResults([])
+                  } else if (searchResults.length > 0 || searchError) {
+                    setSearchError('')
+                    setSearchResults([])
+                  }
+                }}
+                onFocus={() => setSearchFocused(true)}
+              />
+              <button className="search-btn home-search-btn" type="submit" disabled={searching}>{t('search')}</button>
+            </form>
+            {searchFocused && !searchQuery && searchHistory.length > 0 && searchResults.length === 0 && !searchError && (
+              <div className="search-results">
+                <div className="search-history-header">
+                  <span>{t('searchHistory')}</span>
+                  <button className="btn-link btn-link-sm" onClick={() => { setSearchHistory([]); localStorage.removeItem('lt_search_history') }}>{t('clear')}</button>
+                </div>
+                {searchHistory.map((q, i) => (
+                  <div key={i} className="search-result-item search-history-item" onMouseDown={(e) => { e.preventDefault(); handleSearch(null, q) }}>
+                    <span className="search-history-icon">~</span>
+                    <span className="search-result-name">{q}</span>
+                    <button className="btn-link btn-link-sm search-history-del" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => {
+                      e.stopPropagation()
+                      setSearchHistory((prev) => {
+                        const next = prev.filter((_, j) => j !== i)
+                        localStorage.setItem('lt_search_history', JSON.stringify(next))
+                        return next
+                      })
+                    }}>{t('delete')}</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map((u) => (
+                  <div key={u.id} className="search-result-item" onClick={() => {
+                    saveSearchHistory(searchQuery)
+                    navigate(`/user/${u.id}`)
+                  }}>
+                    {u.avatar ? (
+                      <img className="search-result-avatar-img" src={`/avatars/${u.avatar}`} alt={u.username} />
+                    ) : (
+                      <span className="search-result-avatar">{u.username.charAt(0).toUpperCase()}</span>
+                    )}
+                    <span className="search-result-name">{u.username}</span>
+                    <span className="search-result-hint">{t('clickToViewPublic')}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchError && !searching && (
+              <div className="search-results">
+                <div className="search-result-item" style={{ color: 'var(--text-muted)', cursor: 'default' }}>
+                  {searchError}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <footer className="app-footer">
+        <span className="footer-link" onClick={() => setShowAbout(true)}>{t('about')}</span>
+      </footer>
+      {showAbout && (
+        <Modal onClose={() => setShowAbout(false)} title={t('aboutEmberclouds')}>
+          <div className="about-content">
+            <div className="about-section">
+              <h3 className="about-label">{t('sourceCode')}</h3>
+              <a className="about-link" href="https://github.com/Ember5714/Emberclouds" target="_blank" rel="noopener noreferrer">
+                github.com/Ember5714/Emberclouds
+              </a>
+            </div>
+            <div className="about-section">
+              <h3 className="about-label">{t('socialMedia')}</h3>
+              <div className="about-links">
+                <a className="about-link" href="https://space.bilibili.com/3493086938270254" target="_blank" rel="noopener noreferrer">
+                  bilibili: @Ember5714
+                </a>
+                <a className="about-link" href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w" target="_blank" rel="noopener noreferrer">
+                  {t('douyin')}
+                </a>
+              </div>
+            </div>
+            <div className="about-section">
+              <h3 className="about-label">{t('author')}</h3>
+              <span className="about-text">Ember5714</span>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
@@ -1132,16 +1365,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
               <Logo />
             </div>
             <div className="header-right">
-              <div className="visibility-switch">
-                <button
-                  className={`vis-btn ${pageMode === 'private' ? 'vis-active' : ''}`}
-                  onClick={() => navigate('/privateWarehouse')}
-                >{t('privateWarehouse')}</button>
-                <button
-                  className={`vis-btn ${pageMode === 'public' ? 'vis-active' : ''}`}
-                  onClick={() => navigate('/publicWarehouse')}
-                >{t('publicWarehouse')}</button>
-              </div>
               <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
                 {avatarUrl ? (
                   <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
@@ -1153,6 +1376,15 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
                 {showUserMenu && (
                   <div className="user-dropdown">
                     <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
+                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
+                      {t('home')}
+                    </div>
+                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
+                      {t('privateWarehouse')}
+                    </div>
+                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
+                      {t('publicWarehouse')}
+                    </div>
                     <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
                       {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
                     </div>

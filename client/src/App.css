@@ -1597,6 +1597,63 @@ body {
   }
 }
 
+/* ============ Home Page ============ */
+.home-search {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+}
+
+.home-search-inner {
+  text-align: center;
+  width: 100%;
+  max-width: 560px;
+}
+
+.home-search-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+.home-search-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+}
+
+.home-search-bar {
+  margin-bottom: 0;
+}
+
+.home-search-input {
+  padding: 14px 20px !important;
+  font-size: 16px !important;
+  border-radius: var(--radius) 0 0 var(--radius) !important;
+}
+
+.home-search-btn {
+  padding: 14px 24px !important;
+  font-size: 16px !important;
+  border-radius: 0 var(--radius) var(--radius) 0 !important;
+}
+
+/* ============ Dropdown Nav Items ============ */
+.user-dropdown-nav {
+  cursor: pointer;
+  transition: background 0.15s;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.user-dropdown-nav:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 700px) {
   .app { padding: 8px; }
@@ -1610,6 +1667,8 @@ body {
   .modal { max-width: 95vw; margin: 10px; }
   .md-split { flex-direction: column; min-height: 400px; }
   .md-split-pane { min-height: 180px; }
+  .home-search-title { font-size: 24px; }
+  .home-search { min-height: 40vh; padding: 20px 12px; }
 }
 
 /* ============ Footer ============ */
