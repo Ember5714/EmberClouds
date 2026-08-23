@@ -1235,6 +1235,9 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
             <span className="profile-page-title">
               {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
             </span>
+            {viewingOwnProfile && (
+              <button className="btn-tool" onClick={() => setShowSettings(true)}>{t('editProfile')}</button>
+            )}
           </header>
 
           {profileInfo && (

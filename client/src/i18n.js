@@ -78,7 +78,7 @@ const translations = {
     home: '首页',
     privateWarehouse: '私有仓库',
     publicWarehouse: '公开仓库',
-    profile: '个人主页',
+    profile: '公开仓库',
     about: '关于',
     settings: '设置',
     logout: '退出登录',
@@ -125,7 +125,7 @@ const translations = {
     copyFailed: '复制失败',
 
     // 个人主页
-    profileTitle: '个人主页',
+    profileTitle: '公开仓库',
     editProfile: '编辑资料',
     publicProfile: '公开资料',
     publicProfileDesc: '开启后他人可通过用户名搜索到你的主页',
@@ -154,7 +154,7 @@ const translations = {
     sendCodeForPassword: '发送验证码',
 
     backToMyWarehouse: '返回我的仓库',
-    myProfile: '我的个人主页',
+    myProfile: '我的公开仓库',
     publicWarehouseOf: '{name} 的公开仓库',
     backToParent: '返回上级',
     back: '返回',
@@ -338,7 +338,7 @@ const translations = {
     home: 'Home',
     privateWarehouse: 'Private',
     publicWarehouse: 'Public',
-    profile: 'Profile',
+    profile: 'Public',
     about: 'About',
     settings: 'Settings',
     logout: 'Logout',
@@ -385,7 +385,7 @@ const translations = {
     copyFailed: 'Copy failed',
 
     // Profile
-    profileTitle: 'Profile',
+    profileTitle: 'Public Warehouse',
     editProfile: 'Edit Profile',
     publicProfile: 'Public Profile',
     publicProfileDesc: 'When enabled, others can find your profile by username',
@@ -414,7 +414,7 @@ const translations = {
     sendCodeForPassword: 'Send Code',
 
     backToMyWarehouse: 'Back to My Warehouse',
-    myProfile: 'My Profile',
+    myProfile: 'My Public Warehouse',
     publicWarehouseOf: `{name}'s Public Warehouse`,
     backToParent: 'Back to Parent',
     back: 'Back',
