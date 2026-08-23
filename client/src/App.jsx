@@ -231,7 +231,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomePage user={user} onLogin={handleLogin} onLogout={handleLogout} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/privateWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="private" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="/publicWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="public" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
+      <Route path="/publicWarehouse" element={<Navigate to="/profile" replace />} />
       <Route path="/profile" element={<MainApp user={user} onLogout={handleLogout} pageMode="profile" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/user/:userId" element={<MainApp user={user} onLogout={handleLogout} pageMode="user" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
@@ -551,9 +551,6 @@ function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, t
                   <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
                     {t('privateWarehouse')}
                   </div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
-                    {t('publicWarehouse')}
-                  </div>
                   <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
                     {t('profile')}
                   </div>
@@ -734,11 +731,11 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   // 公开/私密
-  const [visibility, setVisibility] = useState(pageMode === 'public' ? 'public' : 'private')
+  const [visibility, setVisibility] = useState(pageMode === 'public' || pageMode === 'profile' ? 'public' : 'private')
 
   // 同步 visibility 与 URL 路由
   useEffect(() => {
-    if (pageMode === 'public') setVisibility('public')
+    if (pageMode === 'public' || pageMode === 'profile') setVisibility('public')
     else if (pageMode === 'private') setVisibility('private')
   }, [pageMode])
   const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
@@ -766,8 +763,8 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     return () => document.removeEventListener('click', handler)
   }, [])
 
-  // 正在浏览的公开用户（从 URL 参数获取）
-  const publicUser = pageMode === 'user' ? { id: params.userId } : null
+  // 正在浏览的公开用户（从 URL 参数获取，profile 模式显示自己的公开仓库）
+  const publicUser = (pageMode === 'user' || pageMode === 'profile') ? { id: pageMode === 'user' ? params.userId : user?.id } : null
   const viewingOwnProfile = pageMode === 'profile'
   const isProfileView = pageMode === 'user' || pageMode === 'profile'
   const isOwnSpace = pageMode === 'private' || pageMode === 'public'
@@ -1390,9 +1387,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
                     </div>
                     <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
                       {t('privateWarehouse')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
-                      {t('publicWarehouse')}
                     </div>
                     <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
                       {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
