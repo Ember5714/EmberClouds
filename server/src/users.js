@@ -17,10 +17,10 @@ const AVATAR_DIR = path.join(config.ROOT_DIR, 'data', 'avatars');
 const PROFILE_DIR = path.join(config.ROOT_DIR, 'data', 'profiles');
 const BG_DIR = path.join(config.ROOT_DIR, 'data', 'backgrounds');
 const SALT_LEN = 16, KEY_LEN = 64;
-const TOKEN_TTL = 1000 * 60 * 60 * 12;       // 12h
-const REFRESH_TTL = 1000 * 60 * 60 * 24 * 7; // 7d
-const CODE_FAIL_MAX = 5;
-const CODE_FAIL_LOCK_MS = 60 * 60 * 1000;     // 1h
+const TOKEN_TTL = config.token.accessTokenTTL;
+const REFRESH_TTL = config.token.refreshTokenTTL;
+const CODE_FAIL_MAX = config.verification.codeFailMax;
+const CODE_FAIL_LOCK_MS = config.verification.codeFailLockMs;
 
 function logCode(label, email, code) {
   console.log(`[Email] ${label} for ${email}: ${code}`);
@@ -244,7 +244,7 @@ async function register({ email, username, password, ip }) {
   users[email] = {
     id: crypto.randomUUID(), email, username, passwordHash: hashPassword(password),
     verified: false, codeHash: hashCode(code), publicProfile: false,
-    codeExpires: Date.now() + 1000 * 60 * 10, createdAt: Date.now(),
+    codeExpires: Date.now() + config.verification.codeTTL, createdAt: Date.now(),
   };
   await saveUsers(users);
 
@@ -287,7 +287,7 @@ async function resendCode(email) {
 
   const code = generateCode();
   entry.codeHash = hashCode(code);
-  entry.codeExpires = Date.now() + 1000 * 60 * 10;
+  entry.codeExpires = Date.now() + config.verification.codeTTL;
   clearCodeFailures(entry);
   await saveUsers(users);
 
@@ -409,7 +409,7 @@ async function sendOperationCode(email, operation) {
 
   const code = generateCode();
   user.opCodeHash = hashCode(code);
-  user.opCodeExpires = Date.now() + 1000 * 60 * 10;
+  user.opCodeExpires = Date.now() + config.verification.codeTTL;
   user.opCodeScope = operation;
   clearCodeFailures(user);
   await saveUsers(users);
@@ -564,7 +564,7 @@ async function sendResetCode(email) {
 
   const code = generateCode();
   user.opCodeHash = hashCode(code);
-  user.opCodeExpires = Date.now() + 1000 * 60 * 10;
+  user.opCodeExpires = Date.now() + config.verification.codeTTL;
   user.opCodeScope = 'resetPassword';
   clearCodeFailures(user);
   await saveUsers(users);

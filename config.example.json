@@ -1,0 +1,49 @@
+{
+  "server": {
+    "port": 3000,
+    "bindAddress": "0.0.0.0",
+    "deviceName": "",
+    "requestTimeout": 5000,
+    "headersTimeout": 6000,
+    "keepAliveTimeout": 5000
+  },
+  "storage": {
+    "uploadDir": "file",
+    "maxFileSize": 0,
+    "maxFileCount": 500,
+    "chunkSize": 65536,
+    "uploadCooldown": 10000
+  },
+  "smtp": {
+    "host": "smtp-mail.outlook.com",
+    "port": 587,
+    "user": "admin@example.com",
+    "pass": "your_smtp_password"
+  },
+  "registration": {
+    "open": true
+  },
+  "token": {
+    "accessTokenTTL": 43200000,
+    "refreshTokenTTL": 604800000
+  },
+  "verification": {
+    "codeTTL": 600000,
+    "codeFailMax": 5,
+    "codeFailLockMs": 3600000
+  },
+  "rateLimit": {
+    "register": { "max": 3, "windowMs": 3600000 },
+    "login": { "max": 10, "windowMs": 900000 },
+    "verify": { "max": 10, "windowMs": 900000 },
+    "resend": { "max": 5, "windowMs": 900000 }
+  },
+  "security": {
+    "maxRateLimitEntries": 10000,
+    "maxLoginDelayEntries": 5000
+  },
+  "websocket": {
+    "authTimeout": 10000,
+    "maxUnauthenticated": 10
+  }
+}

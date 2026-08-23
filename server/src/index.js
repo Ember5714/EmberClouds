@@ -17,15 +17,16 @@ const discovery = require('./discovery');
 const fileServer = require('./fileServer');
 const wsServer = require('./wsServer');
 const rateLimit = require('./rateLimit');
+rateLimit.init(config.rateLimit, config.security);
 const Tui = require('./tui');
 
 const app = express();
 const server = http.createServer(app);
 
 // CRIT-2: Slowloris protection — HTTP server timeouts
-server.timeout = 5000;           // 5s request timeout
-server.headersTimeout = 6000;    // 6s headers timeout
-server.keepAliveTimeout = 5000;  // 5s keep-alive timeout
+server.timeout = config.REQUEST_TIMEOUT;
+server.headersTimeout = config.HEADERS_TIMEOUT;
+server.keepAliveTimeout = config.KEEPALIVE_TIMEOUT;
 
 // ============ Firewall ============
 function registerFirewall() {
@@ -472,7 +473,7 @@ app.get('/api/users/:userId/public/download-encrypted', async (req, res) => {
 });
 
 // ============ Upload ============
-const UPLOAD_COOLDOWN = 10 * 1000;
+const UPLOAD_COOLDOWN = config.UPLOAD_COOLDOWN;
 const lastUploadTime = new Map();
 const upload = fileServer.createUploadHandler();
 

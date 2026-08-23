@@ -68,13 +68,60 @@ Open `http://localhost:3000`. To allow other devices on the LAN, set `BIND_ADDRE
 2. Enter the verification code (printed in the console if SMTP isn't configured)
 3. Done — start uploading files
 
-### SMTP Email Setup
+### Configuration
 
-```bat
-set SMTP_HOST=smtp.qq.com
-set SMTP_PORT=587
-set SMTP_USER=your@example.com
-set SMTP_PASS=your_smtp_password
+All settings are centralized in `config.json` (copy from `config.example.json` on first run). Environment variables override file values.
+
+```json
+{
+  "server": {
+    "port": 3000,
+    "bindAddress": "0.0.0.0",
+    "deviceName": "",
+    "requestTimeout": 5000,
+    "headersTimeout": 6000,
+    "keepAliveTimeout": 5000
+  },
+  "storage": {
+    "uploadDir": "file",
+    "maxFileSize": 0,
+    "maxFileCount": 500,
+    "chunkSize": 65536,
+    "uploadCooldown": 10000
+  },
+  "smtp": {
+    "host": "smtp-mail.outlook.com",
+    "port": 587,
+    "user": "admin@example.com",
+    "pass": "your_smtp_password"
+  },
+  "registration": {
+    "open": true
+  },
+  "token": {
+    "accessTokenTTL": 43200000,
+    "refreshTokenTTL": 604800000
+  },
+  "verification": {
+    "codeTTL": 600000,
+    "codeFailMax": 5,
+    "codeFailLockMs": 3600000
+  },
+  "rateLimit": {
+    "register": { "max": 3, "windowMs": 3600000 },
+    "login": { "max": 10, "windowMs": 900000 },
+    "verify": { "max": 10, "windowMs": 900000 },
+    "resend": { "max": 5, "windowMs": 900000 }
+  },
+  "security": {
+    "maxRateLimitEntries": 10000,
+    "maxLoginDelayEntries": 5000
+  },
+  "websocket": {
+    "authTimeout": 10000,
+    "maxUnauthenticated": 10
+  }
+}
 ```
 
 If SMTP is not configured, verification codes are printed to the server console.
@@ -229,19 +276,34 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `3000` |
-| `BIND_ADDRESS` | Bind address (`127.0.0.1` = local only, `0.0.0.0` = LAN) | `0.0.0.0` |
-| `DEVICE_NAME` | Device display name | Hostname |
-| `UPLOAD_DIR` | Storage root | `file/` |
-| `MAX_FILE_SIZE` | Max single file size (bytes, 0 = unlimited) | `0` |
-| `MAX_FILE_COUNT` | Max files per upload batch | `500` |
-| `REGISTRATION_OPEN` | Allow new registrations | `true` |
-| `SMTP_HOST` | SMTP server | — |
-| `SMTP_PORT` | SMTP port | `587` |
-| `SMTP_USER` | SMTP username | — |
-| `SMTP_PASS` | SMTP password | — |
+> **Note:** `config.json` is the recommended way to configure settings.  
+> Environment variables override the corresponding fields in `config.json`.
+
+| Variable | Config Key | Description | Default |
+|----------|-----------|-------------|---------|
+| `PORT` | `server.port` | Server port | `3000` |
+| `BIND_ADDRESS` | `server.bindAddress` | Bind address | `0.0.0.0` |
+| `DEVICE_NAME` | `server.deviceName` | Device display name | Hostname |
+| `REQUEST_TIMEOUT` | `server.requestTimeout` | HTTP request timeout (ms) | `5000` |
+| `HEADERS_TIMEOUT` | `server.headersTimeout` | HTTP headers timeout (ms) | `6000` |
+| `KEEPALIVE_TIMEOUT` | `server.keepAliveTimeout` | HTTP keep-alive timeout (ms) | `5000` |
+| `UPLOAD_DIR` | `storage.uploadDir` | Storage root | `file/` |
+| `MAX_FILE_SIZE` | `storage.maxFileSize` | Max single file size (bytes, 0 = unlimited) | `0` |
+| `MAX_FILE_COUNT` | `storage.maxFileCount` | Max files per upload batch | `500` |
+| `CHUNK_SIZE` | `storage.chunkSize` | File transfer chunk size (bytes) | `65536` |
+| `UPLOAD_COOLDOWN` | `storage.uploadCooldown` | Upload cooldown per user (ms) | `10000` |
+| `REGISTRATION_OPEN` | `registration.open` | Allow new registrations | `true` |
+| `SMTP_HOST` | `smtp.host` | SMTP server | — |
+| `SMTP_PORT` | `smtp.port` | SMTP port | `587` |
+| `SMTP_USER` | `smtp.user` | SMTP username | — |
+| `SMTP_PASS` | `smtp.pass` | SMTP password | — |
+| `TOKEN_ACCESS_TTL` | `token.accessTokenTTL` | Access token lifetime (ms) | `43200000` (12h) |
+| `TOKEN_REFRESH_TTL` | `token.refreshTokenTTL` | Refresh token lifetime (ms) | `604800000` (7d) |
+| `VERIFY_CODE_TTL` | `verification.codeTTL` | Verification code validity (ms) | `600000` (10min) |
+| `VERIFY_CODE_FAIL_MAX` | `verification.codeFailMax` | Max code failures before lockout | `5` |
+| `VERIFY_CODE_FAIL_LOCK` | `verification.codeFailLockMs` | Code failure lockout duration (ms) | `3600000` (1h) |
+| `WS_AUTH_TIMEOUT` | `websocket.authTimeout` | WebSocket auth timeout (ms) | `10000` |
+| `WS_MAX_UNAUTH` | `websocket.maxUnauthenticated` | Max unauthenticated WS connections | `10` |
 
 ### FAQ
 
@@ -314,13 +376,60 @@ Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start
 2. 输入邮箱验证码完成验证（若未配置 SMTP，验证码将打印在服务端控制台）
 3. 登录后即可使用全部功能
 
-### SMTP 邮件配置
+### 配置
 
-```bat
-set SMTP_HOST=smtp.qq.com
-set SMTP_PORT=587
-set SMTP_USER=your@example.com
-set SMTP_PASS=your_smtp_password
+所有设置集中在 `config.json` 中（首次运行时会自动从 `config.example.json` 复制）。环境变量可覆盖文件中的值。
+
+```json
+{
+  "server": {
+    "port": 3000,
+    "bindAddress": "0.0.0.0",
+    "deviceName": "",
+    "requestTimeout": 5000,
+    "headersTimeout": 6000,
+    "keepAliveTimeout": 5000
+  },
+  "storage": {
+    "uploadDir": "file",
+    "maxFileSize": 0,
+    "maxFileCount": 500,
+    "chunkSize": 65536,
+    "uploadCooldown": 10000
+  },
+  "smtp": {
+    "host": "smtp-mail.outlook.com",
+    "port": 587,
+    "user": "admin@example.com",
+    "pass": "your_smtp_password"
+  },
+  "registration": {
+    "open": true
+  },
+  "token": {
+    "accessTokenTTL": 43200000,
+    "refreshTokenTTL": 604800000
+  },
+  "verification": {
+    "codeTTL": 600000,
+    "codeFailMax": 5,
+    "codeFailLockMs": 3600000
+  },
+  "rateLimit": {
+    "register": { "max": 3, "windowMs": 3600000 },
+    "login": { "max": 10, "windowMs": 900000 },
+    "verify": { "max": 10, "windowMs": 900000 },
+    "resend": { "max": 5, "windowMs": 900000 }
+  },
+  "security": {
+    "maxRateLimitEntries": 10000,
+    "maxLoginDelayEntries": 5000
+  },
+  "websocket": {
+    "authTimeout": 10000,
+    "maxUnauthenticated": 10
+  }
+}
 ```
 
 若未配置 SMTP，系统验证码将直接输出至服务端控制台。
@@ -474,19 +583,34 @@ set SMTP_PASS=your_smtp_password
 
 ### 环境变量
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `PORT` | 服务监听端口 | `3000` |
-| `BIND_ADDRESS` | 绑定地址（`127.0.0.1` = 仅本机，`0.0.0.0` = 局域网） | `0.0.0.0` |
-| `DEVICE_NAME` | 设备显示名称 | 主机名 |
-| `UPLOAD_DIR` | 文件存储根目录 | `file/` |
-| `MAX_FILE_SIZE` | 单文件大小上限（字节，0 表示不限制） | `0` |
-| `MAX_FILE_COUNT` | 单次批量上传文件数量上限 | `500` |
-| `REGISTRATION_OPEN` | 是否允许新用户注册 | `true` |
-| `SMTP_HOST` | SMTP 服务器地址 | — |
-| `SMTP_PORT` | SMTP 端口 | `587` |
-| `SMTP_USER` | SMTP 认证用户名 | — |
-| `SMTP_PASS` | SMTP 认证密码 | — |
+> **注意：** 推荐使用 `config.json` 来配置所有设置。  
+> 环境变量会覆盖 `config.json` 中对应的字段。
+
+| 变量 | 配置键 | 说明 | 默认值 |
+|------|--------|------|--------|
+| `PORT` | `server.port` | 服务监听端口 | `3000` |
+| `BIND_ADDRESS` | `server.bindAddress` | 绑定地址 | `0.0.0.0` |
+| `DEVICE_NAME` | `server.deviceName` | 设备显示名称 | 主机名 |
+| `REQUEST_TIMEOUT` | `server.requestTimeout` | HTTP 请求超时 (ms) | `5000` |
+| `HEADERS_TIMEOUT` | `server.headersTimeout` | HTTP 头部超时 (ms) | `6000` |
+| `KEEPALIVE_TIMEOUT` | `server.keepAliveTimeout` | HTTP keep-alive 超时 (ms) | `5000` |
+| `UPLOAD_DIR` | `storage.uploadDir` | 文件存储根目录 | `file/` |
+| `MAX_FILE_SIZE` | `storage.maxFileSize` | 单文件大小上限（字节，0 = 不限制） | `0` |
+| `MAX_FILE_COUNT` | `storage.maxFileCount` | 单次批量上传文件数上限 | `500` |
+| `CHUNK_SIZE` | `storage.chunkSize` | 文件传输块大小（字节） | `65536` |
+| `UPLOAD_COOLDOWN` | `storage.uploadCooldown` | 上传冷却时间 (ms) | `10000` |
+| `REGISTRATION_OPEN` | `registration.open` | 是否允许新用户注册 | `true` |
+| `SMTP_HOST` | `smtp.host` | SMTP 服务器地址 | — |
+| `SMTP_PORT` | `smtp.port` | SMTP 端口 | `587` |
+| `SMTP_USER` | `smtp.user` | SMTP 认证用户名 | — |
+| `SMTP_PASS` | `smtp.pass` | SMTP 认证密码 | — |
+| `TOKEN_ACCESS_TTL` | `token.accessTokenTTL` | 访问令牌有效期 (ms) | `43200000` (12h) |
+| `TOKEN_REFRESH_TTL` | `token.refreshTokenTTL` | 刷新令牌有效期 (ms) | `604800000` (7d) |
+| `VERIFY_CODE_TTL` | `verification.codeTTL` | 验证码有效期 (ms) | `600000` (10min) |
+| `VERIFY_CODE_FAIL_MAX` | `verification.codeFailMax` | 验证码最大错误次数 | `5` |
+| `VERIFY_CODE_FAIL_LOCK` | `verification.codeFailLockMs` | 验证码错误锁定时间 (ms) | `3600000` (1h) |
+| `WS_AUTH_TIMEOUT` | `websocket.authTimeout` | WebSocket 认证超时 (ms) | `10000` |
+| `WS_MAX_UNAUTH` | `websocket.maxUnauthenticated` | 最大未认证 WS 连接数 | `10` |
 
 ### 常见问题
 

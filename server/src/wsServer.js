@@ -3,8 +3,9 @@
  * Handles device status broadcast, transfer progress push, real-time notifications
  */
 const crypto = require('crypto');
+const config = require('./config');
 
-const MAX_UNAUTHENTICATED = 10; // Max unauthenticated connections before rejecting new ones
+const MAX_UNAUTHENTICATED = config.websocket.maxUnauthenticated;
 
 class WsServer {
   constructor() {
@@ -60,7 +61,7 @@ class WsServer {
             }
           }, 1000);
         }
-      }, 10000);
+      }, config.websocket.authTimeout);
 
       ws.on('message', (data) => this._handleMessage(ws, data, authTimeout, pendingId));
 

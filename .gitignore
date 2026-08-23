@@ -17,6 +17,7 @@ frp/*.exe
 # environment
 .env
 .env.local
+config.json
 
 # IDE
 .vscode/

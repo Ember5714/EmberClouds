@@ -103,11 +103,12 @@ for %%d in (data\avatars data\backgrounds data\profiles file\private file\public
     if not exist "%ROOT%\%%d" mkdir "%ROOT%\%%d"
 )
 
-rem SMTP config
-set SMTP_HOST=smtp-mail.outlook.com
-set SMTP_PORT=587
-set SMTP_USER=admin@example.com
-set SMTP_PASS=your_smtp_password
+rem Copy config.example.json to config.json if not exists
+if not exist "%ROOT%\config.json" (
+    echo [Setup] Creating config.json from template...
+    copy /y "%ROOT%\config.example.json" "%ROOT%\config.json" >nul
+    echo [Setup] Please edit config.json to configure SMTP and other settings.
+)
 
 rem Start server
 cd /d "%SRV%"

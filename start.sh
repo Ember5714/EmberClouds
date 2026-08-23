@@ -72,7 +72,14 @@ fi
 mkdir -p "$ROOT/data/avatars" "$ROOT/data/backgrounds" "$ROOT/data/profiles" \
          "$ROOT/data/tmp" "$ROOT/file/private" "$ROOT/file/public"
 
-# ── Step 6: Kill existing process on port ──
+# ── Step 6: Copy config.example.json to config.json if not exists ──
+if [ ! -f "$ROOT/config.json" ]; then
+    echo -e "${YELLOW}[Setup] Creating config.json from template...${NC}"
+    cp "$ROOT/config.example.json" "$ROOT/config.json"
+    echo -e "${YELLOW}[Setup] Please edit config.json to configure SMTP and other settings.${NC}"
+fi
+
+# ── Step 7: Kill existing process on port ──
 if command -v lsof &>/dev/null; then
     PID=$(lsof -ti :$PORT 2>/dev/null || true)
 elif command -v ss &>/dev/null; then
