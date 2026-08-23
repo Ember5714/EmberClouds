@@ -10,8 +10,19 @@ const PUBLIC_PATHS = [
   '/api/ping',
 ];
 
+// Public endpoints available to unauthenticated users
+const PUBLIC_PATTERNS = [
+  /^\/api\/users\/search$/,
+  /^\/api\/users\/[^/]+\/profile$/,
+  /^\/api\/users\/[^/]+\/profile\/bio$/,
+  /^\/api\/users\/[^/]+\/public\/browse$/,
+  /^\/api\/users\/[^/]+\/public\/download$/,
+  /^\/api\/users\/[^/]+\/public\/download-encrypted$/,
+];
+
 async function auth(req, res, next) {
   if (PUBLIC_PATHS.includes(req.path)) return next();
+  if (PUBLIC_PATTERNS.some(p => p.test(req.path))) return next();
 
   let token = '';
   const authHeader = req.headers.authorization || '';

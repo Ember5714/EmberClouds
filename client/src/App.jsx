@@ -213,6 +213,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
           <Route path="/home" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
+          <Route path="/user/:userId" element={<MainApp user={null} onLogout={handleLogout} pageMode="user" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
           <Route path="/login" element={<LoginPage onLogin={handleLogin} t={t} />} />
           <Route path="/register" element={<RegisterPage onSuccess={handleRegisterSuccess} t={t} />} />
           <Route path="/verify" element={<VerifyPage email={verifyEmail} onVerified={handleVerified} t={t} />} />
@@ -715,9 +716,9 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
         url = `${API}/files/download?path=${encodeURIComponent(previewFile.path)}&visibility=${visibility}`
       }
       try {
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
+        const token = localStorage.getItem('token')
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+        const res = await fetch(url, { headers })
         if (!res.ok) return
         const blob = await res.blob()
         if (!cancelled) setPreviewUrl(URL.createObjectURL(blob))
@@ -885,9 +886,9 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     }
 
     try {
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      })
+      const token = localStorage.getItem('token')
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+      const response = await fetch(url, { headers })
       if (!response.ok) {
         const err = await response.text()
         toast(t('downloadFailed').replace('{msg}', err || `HTTP ${response.status}`), 'error')
@@ -1242,7 +1243,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
           {profileInfo && (
             <ProfileCard
               profile={profileInfo}
-              isOwner={profileInfo.id === user.id}
+              isOwner={user && profileInfo.id === user.id}
               editing={editingProfile}
               editBio={editBio}
               onEditBio={setEditBio}
@@ -1311,7 +1312,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
                                 {item.isDir ? t('open') : t('preview')}
                               </button>
                               <button className="act-btn" onClick={(e) => { e.stopPropagation(); downloadFile(item) }} title={t('download')} disabled={item.isDir}>{t('download')}</button>
-                              <button className="act-btn" onClick={(e) => { e.stopPropagation(); copyToMyWarehouse(item) }} title={t('copyToMyWarehouse')}>{t('copy')}</button>
+                              {user && <button className="act-btn" onClick={(e) => { e.stopPropagation(); copyToMyWarehouse(item) }} title={t('copyToMyWarehouse')}>{t('copy')}</button>}
                             </div>
                           </div>
                         )
@@ -1340,7 +1341,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
                             <div className="col-actions">
                               <button className="act-btn" onClick={(e) => { e.stopPropagation(); preview(item) }} title={item.isDir ? t('open') : t('preview')}>{item.isDir ? t('open') : t('preview')}</button>
                               <button className="act-btn" onClick={(e) => { e.stopPropagation(); downloadFile(item) }} title={t('download')} disabled={item.isDir}>{t('download')}</button>
-                              <button className="act-btn" onClick={(e) => { e.stopPropagation(); copyToMyWarehouse(item) }} title={t('copyToMyWarehouse')}>{t('copy')}</button>
+                              {user && <button className="act-btn" onClick={(e) => { e.stopPropagation(); copyToMyWarehouse(item) }} title={t('copyToMyWarehouse')}>{t('copy')}</button>}
                             </div>
                           </div>
                         )

@@ -369,14 +369,12 @@ app.post('/api/auth/profile-background', bgUpload.single('background'), async (r
 });
 
 app.get('/api/users/:userId/profile/bio', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const target = await userSystem.getUserById(req.params.userId);
   if (!target) return res.status(404).json({ error: 'User not found or not public' });
   res.json({ bio: await userSystem.getProfileBio(req.params.userId), username: target.username, avatar: target.avatar });
 });
 
 app.get('/api/users/:userId/profile', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const target = await userSystem.getUserById(req.params.userId);
   if (!target) return res.status(404).json({ error: 'User not found or not public' });
   res.json({ ...target, bio: await userSystem.getProfileBio(req.params.userId) });
@@ -393,7 +391,6 @@ app.get('/api/files/browse', async (req, res) => {
 });
 
 app.get('/api/users/:userId/public/browse', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const target = await userSystem.getUserById(req.params.userId);
   if (!target) return res.status(404).json({ error: 'User not found or not public' });
   try { res.json({ ...(await fileServer.browse(req.params.userId, 'public', req.query.dir || '')), username: target.username }); }
@@ -455,7 +452,6 @@ app.get('/api/files/download', (req, res) => {
 });
 
 app.get('/api/users/:userId/public/download', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const target = await userSystem.getUserById(req.params.userId);
   if (!target) return res.status(404).json({ error: 'User not found or not public' });
   if (!req.query.path) return res.status(400).json({ error: 'Missing file path' });
@@ -469,7 +465,6 @@ app.get('/api/files/download-encrypted', (req, res) => {
 });
 
 app.get('/api/users/:userId/public/download-encrypted', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
   const target = await userSystem.getUserById(req.params.userId);
   if (!target) return res.status(404).json({ error: 'User not found or not public' });
   if (!req.query.path) return res.status(400).json({ error: 'Missing file path' });
