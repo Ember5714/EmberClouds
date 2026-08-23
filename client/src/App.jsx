@@ -378,15 +378,6 @@ function AppLayout({ user, onLogin, onLogout, onUpdateUser, theme, cycleTheme, t
               {showUserMenu && (
                 <div className="user-dropdown">
                   <div className="user-dropdown-item user-dropdown-email">{user.email}</div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
-                    {t('home')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
-                    {t('privateWarehouse')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
-                    {t('profile')}
-                  </div>
                   <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
                     {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
                   </div>
