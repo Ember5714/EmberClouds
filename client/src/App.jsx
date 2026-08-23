@@ -211,12 +211,13 @@ export default function App() {
       <LangContext.Provider value={{ lang, t, toggleLang }}>
       <div className="app">
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
+          <Route path="/home" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
           <Route path="/login" element={<LoginPage onLogin={handleLogin} t={t} />} />
           <Route path="/register" element={<RegisterPage onSuccess={handleRegisterSuccess} t={t} />} />
           <Route path="/verify" element={<VerifyPage email={verifyEmail} onVerified={handleVerified} t={t} />} />
           <Route path="/forgot" element={<ForgotPasswordPage t={t} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </div>
       </LangContext.Provider>
@@ -227,7 +228,7 @@ export default function App() {
     <LangContext.Provider value={{ lang, t, toggleLang }}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/home" element={<HomePage user={user} onLogout={handleLogout} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
+      <Route path="/home" element={<HomePage user={user} onLogin={handleLogin} onLogout={handleLogout} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/privateWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="private" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/publicWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="public" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
       <Route path="/profile" element={<MainApp user={user} onLogout={handleLogout} pageMode="profile" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
@@ -449,17 +450,17 @@ function VerifyPage({ email, onVerified, t }) {
 }
 
 // ============ 首页（搜索页） ============
-function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang }) {
+function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, toggleLang }) {
   const navigate = useNavigate()
   const { lang } = useLang()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
-  const [currentUser] = useState(user)
   const userMenuRef = useRef(null)
   const searchBarRef = useRef(null)
+  const isLoggedIn = !!user
 
   // Public profile
-  const [publicProfile, setPublicProfile] = useState(!!user.publicProfile)
+  const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
   const togglePublicProfile = async () => {
     const newVal = !publicProfile
     try {
@@ -525,7 +526,7 @@ function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const avatarUrl = currentUser.avatar ? `/avatars/${currentUser.avatar}` : null
+  const avatarUrl = user && user.avatar ? `/avatars/${user.avatar}` : null
 
   return (
     <div className="app">
@@ -534,38 +535,45 @@ function HomePage({ user, onLogout, themeLabel, cycleTheme, theme, t, toggleLang
           <Logo />
         </div>
         <div className="header-right">
-          <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
-            {avatarUrl ? (
-              <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
-            ) : (
-              <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
-            )}
-            <span className="user-name">{currentUser.username}</span>
-            {currentUser.signature && <span className="user-signature">{currentUser.signature}</span>}
-            {showUserMenu && (
-              <div className="user-dropdown">
-                <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
-                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
-                  {t('privateWarehouse')}
+          {isLoggedIn ? (
+            <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
+              {avatarUrl ? (
+                <img className="user-avatar-img" src={avatarUrl} alt={user.username} />
+              ) : (
+                <span className="user-avatar">{user.username.charAt(0).toUpperCase()}</span>
+              )}
+              <span className="user-name">{user.username}</span>
+              {user.signature && <span className="user-signature">{user.signature}</span>}
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <div className="user-dropdown-item user-dropdown-email">{user.email}</div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
+                    {t('privateWarehouse')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
+                    {t('publicWarehouse')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
+                    {t('profile')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
+                    {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
+                    {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
+                    {t('logout')}
+                  </div>
                 </div>
-                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/publicWarehouse'); setShowUserMenu(false) }}>
-                  {t('publicWarehouse')}
-                </div>
-                <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
-                  {t('profile')}
-                </div>
-                <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
-                  {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
-                </div>
-                <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
-                  {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
-                </div>
-                <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
-                  {t('logout')}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="home-auth-btns">
+              <button className="btn-tool" onClick={() => navigate('/login')}>{t('login')}</button>
+              <button className="btn-tool btn-primary" onClick={() => navigate('/register')}>{t('register')}</button>
+            </div>
+          )}
         </div>
       </header>
 

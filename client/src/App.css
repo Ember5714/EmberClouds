@@ -1654,6 +1654,24 @@ body {
   color: var(--brand);
 }
 
+/* ============ Home Auth Buttons (未登录) ============ */
+.home-auth-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--brand) !important;
+  color: #fff !important;
+  border-color: var(--brand) !important;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover) !important;
+  border-color: var(--brand-hover) !important;
+}
+
 /* ============ Responsive ============ */
 @media (max-width: 700px) {
   .app { padding: 8px; }
