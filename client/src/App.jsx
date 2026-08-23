@@ -1289,12 +1289,37 @@ function MainApp({ user, onLogout, pageMode, t }) {
                   </div>
                 </div>
                 <div className="toolbar-right">
+                  {user && user.id === profileInfo?.id && (
+                    <>
+                      {selected.length > 0 && (
+                        <>
+                          <span className="selected-info">{selectedStats}</span>
+                          <button className="btn-tool btn-danger" onClick={() => deleteItems(selected)}>{t('deleteSelected')}</button>
+                        </>
+                      )}
+                      <button className="btn-tool" onClick={() => setShowNewFolder(true)}>{t('newFolder')}</button>
+                      <button className="btn-tool" onClick={() => setShowUpload(true)}>{t('upload')}</button>
+                    </>
+                  )}
                   <button className="btn-tool" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
                     {viewMode === 'grid' ? t('listView') : t('gridView')}
                   </button>
                   <button className="btn-tool" onClick={() => loadDir(dir)}>{t('refresh')}</button>
                 </div>
               </div>
+
+              {uploading && uploadProgress && (
+                <div className="upload-bar">
+                  <div className="upload-bar-header">
+                    <span>{t('uploading')}</span>
+                    <span>{uploadProgress.percent}% ({formatSize(uploadProgress.loaded)} / {formatSize(uploadProgress.total)})</span>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${uploadProgress.percent}%` }} />
+                  </div>
+                  {uploadProgress.speed > 0 && <span className="upload-speed">{formatSize(uploadProgress.speed)}/s</span>}
+                </div>
+              )}
 
               <div className="main-content">
                 {loading ? (
@@ -1380,6 +1405,16 @@ function MainApp({ user, onLogout, pageMode, t }) {
                 </Modal>
               )}
             </>
+          )}
+          {showUpload && (
+            <Modal onClose={() => setShowUpload(false)} title={t('uploadToVisibility').replace('{visibility}', visibility === 'public' ? t('publicVisibility') : t('privateVisibility'))}>
+              <UploadPanel onUpload={handleUpload} onClose={() => setShowUpload(false)} t={t} />
+            </Modal>
+          )}
+          {showNewFolder && (
+            <Modal onClose={() => setShowNewFolder(false)} title={t('createFolder')}>
+              <InputModal placeholder={t('folderNamePlaceholder')} onSubmit={(name) => { createFolder(name); setShowNewFolder(false) }} onClose={() => setShowNewFolder(false)} t={t} />
+            </Modal>
           )}
         </>
       ) : (
