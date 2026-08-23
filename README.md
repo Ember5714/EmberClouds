@@ -8,9 +8,8 @@
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
   <a href="https://github.com/Ember5714/EmberClouds/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/react-18-61dafb" alt="React">
-  [![Stars](https://img.shields.io/github/stars/Hex-Dragon/PCL2?style=flat&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTggLjI1YS43NS43NSAwIDAgMSAuNjczLjQxOGwxLjg4MiAzLjgxNSA0LjIxLjYxMmEuNzUuNzUgMCAwIDEgLjQxNiAxLjI3OWwtMy4wNDYgMi45Ny43MTkgNC4xOTJhLjc1MS43NTEgMCAwIDEtMS4wODguNzkxTDggMTIuMzQ3bC0zLjc2NiAxLjk4YS43NS43NSAwIDAgMS0xLjA4OC0uNzlsLjcyLTQuMTk0TC44MTggNi4zNzRhLjc1Ljc1IDAgMCAxIC40MTYtMS4yOGw0LjIxLS42MTFMNy4zMjcuNjY4QS43NS43NSAwIDAgMSA4IC4yNVoiIGZpbGw9IiNlYWM1NGYiLz48L3N2Zz4=&logoSize=auto&label=Stars&labelColor=444444&color=eac54f)](https://github.com/Hex-Dragon/PCL2/)
-[![Issues](https://img.shields.io/github/issues/Hex-Dragon/PCL2?style=flat&label=Issues&labelColor=444444&color=1F883D)](https://github.com/Hex-Dragon/PCL2/issues)
-[![哔哩哔哩](https://img.shields.io/badge/动态-BiliBili-00A4DB?style=flat&labelColor=444444&logoSize=auto)](https://space.bilibili.com/11343203/dynamic)
+  <a href="https://github.com/Ember5714/EmberClouds/stargazers"><img src="https://img.shields.io/github/stars/Ember5714/EmberClouds?style=flat&logo=github&label=Stars&labelColor=444444&color=eac54f" alt="Stars"></a>
+  <a href="https://github.com/Ember5714/EmberClouds/issues"><img src="https://img.shields.io/github/issues/Ember5714/EmberClouds?style=flat&label=Issues&labelColor=444444&color=1F883D" alt="Issues"></a>
 </p>
 
 <p align="center">
@@ -28,11 +27,13 @@
 
 A self-hosted LAN file server built with Node.js + React. Think of it as your personal Dropbox that runs on your own machine — accessible by anyone on the same network without uploading anything to the cloud.
 
+Supports Windows, Linux, and macOS.
+
 ### Features
 
-- **Multi-user system** — register, login, email verification, token auth, password reset
+- **Multi-user system** — register, login, email verification, token auth, password reset, refresh token rotation
 - **Private + Public repos** — each user gets two independent spaces, toggle visibility with one click
-- **User search** — find other users by username, browse and download their public files
+- **User search** — find other users by username, browse and download their public files (even unauthenticated)
 - **Personal profiles** — avatar, cover image, status message, Markdown bio
 - **File management** — grid/list view, folder navigation, breadcrumb trail
 - **Upload** — drag-and-drop or click, batch upload up to 500 files at once, real-time progress bar
@@ -40,23 +41,24 @@ A self-hosted LAN file server built with Node.js + React. Think of it as your pe
 - **Image preview** — click any image to open a full-size lightbox
 - **Dark theme** — auto (follows system settings) or manual toggle
 - **Server TUI** — real-time dashboard with color logo, live status, device discovery, and file management
+- **Cross-platform** — works on Windows, Linux, and macOS
 - **Public access** — built-in frp config for exposing your server to the internet via a VPS
-- **Auto-setup** — `start.bat` detects missing dependencies and installs them automatically
+- **Auto-setup** — `start.bat` (Windows) or `start.sh` (Linux/macOS) detects missing dependencies and installs them automatically
 
 ### Quick Start
 
 **Prerequisites:** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/emberclouds.git
-cd emberclouds
+git clone https://github.com/Ember5714/EmberClouds.git
+cd EmberClouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
 cd ../server && npm start
 ```
 
-On Windows, just double-click `start.bat` — it handles everything.
+On Windows, double-click `start.bat`. On Linux/macOS, run `bash start.sh` — it handles everything.
 
 Open `http://localhost:3000`. To allow other devices on the LAN, set `BIND_ADDRESS=0.0.0.0` then use `http://<your-ip>:3000`.
 
@@ -98,7 +100,7 @@ The server features a full-color terminal dashboard with real-time status update
 | `tree [path]` | Show directory tree |
 | `info <path>` | Show file/directory details |
 | `mkdir <path>` | Create a directory |
-| `rm <path>` | Delete a file or directory |
+| `rm -y <path>` | Delete a file or directory (requires `-y` flag) |
 | `config` | Show current configuration |
 | `clear` | Clear the message log |
 | `stop` / `restart` | Stop or restart the server |
@@ -122,6 +124,7 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 ```
 ├── start.bat               # One-click startup (auto-install + launch)
 ├── start.ps1               # PowerShell alternative
+├── start.sh                # Linux/macOS startup script
 ├── .gitignore
 ├── LICENSE
 ├── README.md
@@ -220,8 +223,8 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/ping` | Required | Health check |
-| GET | `/api/self` | Required | Server device info |
+| GET | `/api/ping` | No | Health check |
+| GET | `/api/self` | No | Server device info |
 | GET | `/api/diagnose` | Required | Diagnostics (summary only) |
 
 ### Environment Variables
@@ -229,7 +232,7 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | Server port | `3000` |
-| `BIND_ADDRESS` | Bind address (`127.0.0.1` = local only, `0.0.0.0` = LAN) | `127.0.0.1` |
+| `BIND_ADDRESS` | Bind address (`127.0.0.1` = local only, `0.0.0.0` = LAN) | `0.0.0.0` |
 | `DEVICE_NAME` | Device display name | Hostname |
 | `UPLOAD_DIR` | Storage root | `file/` |
 | `MAX_FILE_SIZE` | Max single file size (bytes, 0 = unlimited) | `0` |
@@ -250,6 +253,7 @@ Ensure `BIND_ADDRESS=0.0.0.0` is configured, then restart `start.bat` to auto-re
 
 ```powershell
 netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Discovery" dir=in action=allow protocol=UDP localport=3001 enable=yes
 ```
 
 **Upload fails with too many files?**
@@ -269,11 +273,13 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 
 基于 Node.js + React 构建的局域网文件共享平台。部署在本地主机上，同一局域网内的所有设备均可通过浏览器直接访问，无需将文件上传至任何第三方云端服务。
 
+支持 Windows、Linux、macOS 三平台。
+
 ### 功能特性
 
-- **多用户系统** — 支持用户注册、登录、邮箱验证码、Token 身份认证以及密码重置
+- **多用户系统** — 支持用户注册、登录、邮箱验证码、Token 身份认证、Refresh Token 轮换以及密码重置
 - **私密与公开仓库** — 每位用户拥有独立的私密与公开两个存储空间，一键切换
-- **用户发现** — 通过用户名搜索已开启公开仓库的用户，浏览并下载其公开文件
+- **用户发现** — 通过用户名搜索已开启公开仓库的用户，浏览并下载其公开文件（未登录用户亦可浏览）
 - **个人主页** — 支持自定义头像、封面背景、个性签名以及 Markdown 格式的个人简介
 - **文件管理** — 提供网格与列表两种视图模式，支持文件夹层级导航与面包屑路径
 - **文件上传** — 支持拖拽上传与点击选择，单次批量上传最多 500 个文件，实时显示进度
@@ -281,23 +287,24 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 - **图片预览** — 点击图片弹出灯箱查看原图
 - **深色模式** — 支持跟随系统主题自动切换，亦可手动切换
 - **终端仪表盘** — 全彩 TUI 实时仪表盘，展示运行状态、设备发现、日志面板，支持 Tab 补全和方向键历史
+- **跨平台** — 支持 Windows、Linux、macOS
 - **公网接入** — 内置 frp 反向代理配置，配合 VPS 即可将服务暴露至公网
-- **开箱即用** — `start.bat` 一键启动，自动检测并安装缺失的依赖
+- **开箱即用** — `start.bat`（Windows）或 `start.sh`（Linux/macOS）一键启动，自动检测并安装缺失的依赖
 
 ### 快速开始
 
 **环境要求：** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/emberclouds.git
-cd emberclouds
+git clone https://github.com/Ember5714/EmberClouds.git
+cd EmberClouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
 cd ../server && npm start
 ```
 
-Windows 系统下可直接双击 `start.bat`，脚本将自动完成依赖安装与前端构建。
+Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start.sh`，脚本将自动完成依赖安装与前端构建。
 
 通过浏览器访问 `http://localhost:3000`。若需局域网内其他设备访问，需设置 `BIND_ADDRESS=0.0.0.0`，然后通过 `http://<本机IP>:3000` 访问。
 
@@ -339,7 +346,7 @@ set SMTP_PASS=your_smtp_password
 | `tree [路径]` | 以树形结构展示目录层级 |
 | `info <路径>` | 查看文件或目录的详细信息 |
 | `mkdir <路径>` | 创建目录 |
-| `rm <路径>` | 删除文件或目录 |
+| `rm -y <路径>` | 删除文件或目录（需 `-y` 确认） |
 | `config` | 查看当前运行配置 |
 | `clear` | 清空日志面板 |
 | `stop` / `restart` | 停止 / 重启服务器 |
@@ -461,8 +468,8 @@ set SMTP_PASS=your_smtp_password
 
 | 方法 | 路径 | 认证 | 说明 |
 |--------|------|------|------|
-| GET | `/api/ping` | 需要 | 健康检查 |
-| GET | `/api/self` | 需要 | 获取服务器设备信息 |
+| GET | `/api/ping` | 无需 | 健康检查 |
+| GET | `/api/self` | 无需 | 获取服务器设备信息 |
 | GET | `/api/diagnose` | 需要 | 诊断信息（仅摘要） |
 
 ### 环境变量
@@ -470,7 +477,7 @@ set SMTP_PASS=your_smtp_password
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `PORT` | 服务监听端口 | `3000` |
-| `BIND_ADDRESS` | 绑定地址（`127.0.0.1` = 仅本机，`0.0.0.0` = 局域网） | `127.0.0.1` |
+| `BIND_ADDRESS` | 绑定地址（`127.0.0.1` = 仅本机，`0.0.0.0` = 局域网） | `0.0.0.0` |
 | `DEVICE_NAME` | 设备显示名称 | 主机名 |
 | `UPLOAD_DIR` | 文件存储根目录 | `file/` |
 | `MAX_FILE_SIZE` | 单文件大小上限（字节，0 表示不限制） | `0` |
@@ -491,6 +498,7 @@ set SMTP_PASS=your_smtp_password
 
 ```powershell
 netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Discovery" dir=in action=allow protocol=UDP localport=3001 enable=yes
 ```
 
 **上传文件数量过多导致失败？**
@@ -510,11 +518,13 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 
 基於 Node.js + React 構建的區域網路檔案分享平台。部署於本機上，同一區域網路內的所有裝置均可透過瀏覽器直接存取，無需將檔案上傳至任何第三方雲端服務。
 
+支援 Windows、Linux、macOS 三平台。
+
 ### 功能特性
 
-- **多用戶系統** — 支援用戶註冊、登入、電子郵件驗證碼、Token 身份認證以及密碼重設
+- **多用戶系統** — 支援用戶註冊、登入、電子郵件驗證碼、Token 身份認證、Refresh Token 輪換以及密碼重設
 - **私密與公開倉庫** — 每位用戶擁有獨立的私密與公開兩個儲存空間，一鍵切換
-- **用戶發現** — 透過使用者名稱搜尋已開啟公開倉庫的用戶，瀏覽並下載其公開檔案
+- **用戶發現** — 透過使用者名稱搜尋已開啟公開倉庫的用戶，瀏覽並下載其公開檔案（未登入用戶亦可瀏覽）
 - **個人主頁** — 支援自訂頭像、封面背景、個性簽名以及 Markdown 格式的個人簡介
 - **檔案管理** — 提供網格與列表兩種檢視模式，支援資料夾層級導航與麵包屑路徑
 - **檔案上傳** — 支援拖曳上傳與點擊選取，單次批次上傳最多 500 個檔案，即時顯示進度
@@ -522,23 +532,24 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 - **圖片預覽** — 點擊圖片彈出燈箱檢視原圖
 - **深色模式** — 支援跟隨系統主題自動切換，亦可手動切換
 - **終端儀表板** — 全彩 TUI 即時儀表板，展示執行狀態、裝置發現、日誌面板，支援 Tab 補全和方向鍵歷史
+- **跨平台** — 支援 Windows、Linux、macOS
 - **公網接入** — 內建 frp 反向代理設定，配合 VPS 即可將服務暴露至公網
-- **開箱即用** — `start.bat` 一鍵啟動，自動偵測並安裝缺失的依賴
+- **開箱即用** — `start.bat`（Windows）或 `start.sh`（Linux/macOS）一鍵啟動，自動偵測並安裝缺失的依賴
 
 ### 快速開始
 
 **環境要求：** Node.js 18+
 
 ```bash
-git clone https://github.com/yourname/emberclouds.git
-cd emberclouds
+git clone https://github.com/Ember5714/EmberClouds.git
+cd EmberClouds
 
 cd server && npm install
 cd ../client && npm install && npm run build
 cd ../server && npm start
 ```
 
-Windows 系統下可直接雙擊 `start.bat`，指令碼將自動完成依賴安裝與前端構建。
+Windows 系統下可直接雙擊 `start.bat`，Linux/macOS 下執行 `bash start.sh`，指令碼將自動完成依賴安裝與前端構建。
 
 透過瀏覽器存取 `http://localhost:3000`。若需區域網路內其他裝置存取，需設定 `BIND_ADDRESS=0.0.0.0`，然後透過 `http://<本機IP>:3000` 存取。
 
@@ -580,7 +591,7 @@ set SMTP_PASS=your_smtp_password
 | `tree [路徑]` | 以樹狀結構展示目錄層級 |
 | `info <路徑>` | 檢視檔案或目錄的詳細資訊 |
 | `mkdir <路徑>` | 建立目錄 |
-| `rm <路徑>` | 刪除檔案或目錄 |
+| `rm -y <路徑>` | 刪除檔案或目錄（需 `-y` 確認） |
 | `config` | 檢視目前執行設定 |
 | `clear` | 清空日誌面板 |
 | `stop` / `restart` | 停止 / 重新啟動伺服器 |
@@ -604,6 +615,7 @@ set SMTP_PASS=your_smtp_password
 ```
 ├── start.bat               # 一鍵啟動指令碼（自動安裝依賴 + 啟動服務）
 ├── start.ps1               # PowerShell 啟動指令碼（備選）
+├── start.sh                # Linux/macOS 啟動指令碼
 ├── .gitignore
 ├── LICENSE
 ├── README.md
@@ -702,8 +714,8 @@ set SMTP_PASS=your_smtp_password
 
 | 方法 | 路徑 | 認證 | 說明 |
 |--------|------|------|------|
-| GET | `/api/ping` | 需要 | 健康檢查 |
-| GET | `/api/self` | 需要 | 取得伺服器裝置資訊 |
+| GET | `/api/ping` | 無需 | 健康檢查 |
+| GET | `/api/self` | 無需 | 取得伺服器裝置資訊 |
 | GET | `/api/diagnose` | 需要 | 診斷資訊（僅摘要） |
 
 ### 環境變數
@@ -711,7 +723,7 @@ set SMTP_PASS=your_smtp_password
 | 變數 | 說明 | 預設值 |
 |------|------|--------|
 | `PORT` | 服務監聽埠號 | `3000` |
-| `BIND_ADDRESS` | 綁定位址（`127.0.0.1` = 僅本機，`0.0.0.0` = 區域網路） | `127.0.0.1` |
+| `BIND_ADDRESS` | 綁定位址（`127.0.0.1` = 僅本機，`0.0.0.0` = 區域網路） | `0.0.0.0` |
 | `DEVICE_NAME` | 裝置顯示名稱 | 主機名稱 |
 | `UPLOAD_DIR` | 檔案儲存根目錄 | `file/` |
 | `MAX_FILE_SIZE` | 單檔案大小上限（位元組，0 表示不限制） | `0` |
@@ -732,6 +744,7 @@ set SMTP_PASS=your_smtp_password
 
 ```powershell
 netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow protocol=TCP localport=3000 enable=yes
+netsh advfirewall firewall add rule name="Emberclouds-Discovery" dir=in action=allow protocol=UDP localport=3001 enable=yes
 ```
 
 **上傳檔案數量過多導致失敗？**
@@ -742,9 +755,5 @@ netsh advfirewall firewall add rule name="Emberclouds-Port" dir=in action=allow 
 
 ### 相關連結
 
-- 嗶哩嗶哩: [@@Ember5714](https://space.bilibili.com/3493086938270254)
-- 抖音: [@Ember5714](https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w)  
-
-==以下为arg游戏元素，切勿当真==
-总共做了三次，终于%2525e6%252588%252590%2525e5%25258a%25259f%2525e4%2525ba%252586
-有一个一直未公开的命令现在说一下，是01100100-01100101-01101100-01100101-01110100-01100101，然后它可以^^被删掉了，但是建议不要使用，可能会发生一些意外者么会能锟斤拷锟斤拷锟1斤拷&
+- 嗶哩嗶哩: [@Ember5714](https://space.bilibili.com/3493086938270254)
+- 抖音: [@Ember5714](https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w)
