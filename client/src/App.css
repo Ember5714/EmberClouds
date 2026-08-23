@@ -892,9 +892,7 @@ body {
 
 /* ============ Profile Page Layout ============ */
 .profile-page {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 20px 16px;
+  /* inherits max-width from parent .app (1100px), same as private warehouse */
 }
 
 .profile-page-logo {
