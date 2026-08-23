@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { getInitialLang, t as translate, fmt, LangContext, useLang } from './i18n'
 
 const API = '/api'
@@ -202,41 +202,264 @@ export default function App() {
     navigate('/login')
   }
 
-  if (checking) {
-    return <LangContext.Provider value={{ lang, t, toggleLang }}><div className="app"><div className="auth-page"><div className="auth-card anim-fadeInScale"><div style={{ textAlign: 'center', padding: '40px 0' }}><div className="skeleton skeleton-title" style={{ margin: '0 auto' }} /><div className="skeleton skeleton-text" style={{ width: '50%', margin: '12px auto 0' }} /></div></div></div></div></LangContext.Provider>
+  const handleUpdateUser = (updatedUser) => {
+    setUser(updatedUser)
   }
 
-  if (!user) {
+  if (checking) {
     return (
       <LangContext.Provider value={{ lang, t, toggleLang }}>
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-          <Route path="/home" element={<HomePage user={null} onLogin={handleLogin} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-          <Route path="/user/:userId" element={<MainApp user={null} onLogout={handleLogout} pageMode="user" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} t={t} />} />
-          <Route path="/register" element={<RegisterPage onSuccess={handleRegisterSuccess} t={t} />} />
-          <Route path="/verify" element={<VerifyPage email={verifyEmail} onVerified={handleVerified} t={t} />} />
-          <Route path="/forgot" element={<ForgotPasswordPage t={t} />} />
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </div>
+        <div className="app">
+          <div className="auth-page">
+            <div className="auth-card anim-fadeInScale">
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div className="skeleton skeleton-title" style={{ margin: '0 auto' }} />
+                <div className="skeleton skeleton-text" style={{ width: '50%', margin: '12px auto 0' }} />
+              </div>
+            </div>
+          </div>
+        </div>
       </LangContext.Provider>
     )
   }
 
   return (
     <LangContext.Provider value={{ lang, t, toggleLang }}>
-    <Routes>
-      <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/home" element={<HomePage user={user} onLogin={handleLogin} onLogout={handleLogout} themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="/privateWarehouse" element={<MainApp user={user} onLogout={handleLogout} pageMode="private" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="/publicWarehouse" element={<Navigate to="/profile" replace />} />
-      <Route path="/profile" element={<MainApp user={user} onLogout={handleLogout} pageMode="profile" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="/user/:userId" element={<MainApp user={user} onLogout={handleLogout} pageMode="user" themeLabel={themeLabel} cycleTheme={cycleTheme} theme={theme} t={t} toggleLang={toggleLang} />} />
-      <Route path="*" element={<Navigate to="/home" replace />} />
-    </Routes>
+      <Routes>
+        <Route element={<AppLayout user={user} onLogin={handleLogin} onLogout={handleLogout} onUpdateUser={handleUpdateUser} theme={theme} cycleTheme={cycleTheme} themeLabel={themeLabel} t={t} toggleLang={toggleLang} />}>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<HomePage user={user} onLogin={handleLogin} onLogout={handleLogout} t={t} />} />
+          <Route path="/privateWarehouse" element={user ? <MainApp user={user} onLogout={handleLogout} pageMode="private" t={t} /> : <Navigate to="/home" replace />} />
+          <Route path="/profile" element={user ? <MainApp user={user} onLogout={handleLogout} pageMode="profile" t={t} /> : <Navigate to="/home" replace />} />
+          <Route path="/user/:userId" element={<MainApp user={user} onLogout={handleLogout} pageMode="user" t={t} />} />
+          <Route path="/login" element={user ? <Navigate to="/home" replace /> : <LoginPage onLogin={handleLogin} t={t} />} />
+          <Route path="/register" element={user ? <Navigate to="/home" replace /> : <RegisterPage onSuccess={handleRegisterSuccess} t={t} />} />
+          <Route path="/verify" element={<VerifyPage email={verifyEmail} onVerified={handleVerified} t={t} />} />
+          <Route path="/forgot" element={<ForgotPasswordPage t={t} />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Route>
+      </Routes>
     </LangContext.Provider>
+  )
+}
+
+// ============ 共享布局（Header 跨路由持久化） ============
+function AppLayout({ user, onLogin, onLogout, onUpdateUser, theme, cycleTheme, themeLabel, t, toggleLang }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const currentPath = location.pathname
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showAbout, setShowAbout] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [toast, setToast] = useState(null)
+  const userMenuRef = useRef(null)
+  const isLoggedIn = !!user
+
+  const showToast = useCallback((msg, type = 'info') => {
+    setToast({ msg, type, id: Date.now() })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
+
+  // Public profile
+  const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
+  useEffect(() => { setPublicProfile(!!(user && user.publicProfile)) }, [user])
+  const togglePublicProfile = async () => {
+    const newVal = !publicProfile
+    try {
+      const r = await api('PATCH', '/auth/profile', { publicProfile: newVal })
+      const d = await r.json()
+      if (r.ok) {
+        setPublicProfile(d.publicProfile)
+        if (onUpdateUser) onUpdateUser({ ...user, publicProfile: d.publicProfile })
+      }
+    } catch {}
+  }
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const avatarUrl = user && user.avatar ? `/avatars/${user.avatar}` : null
+
+  // Settings handlers
+  const handleChangePassword = async (code, newPw) => {
+    try {
+      const r = await api('PATCH', '/auth/password', { code, newPassword: newPw })
+      const d = await r.json()
+      if (r.ok) showToast(t('passwordChanged'))
+      else showToast(d.error || t('changeFailed'), 'error')
+      return r.ok
+    } catch { showToast(t('networkError'), 'error'); return false }
+  }
+
+  const handleChangeUsername = async (newName) => {
+    try {
+      const r = await api('PATCH', '/auth/username', { username: newName })
+      const d = await r.json()
+      if (r.ok) {
+        if (onUpdateUser) onUpdateUser({ ...user, username: d.username })
+        showToast(t('usernameChanged'))
+      } else showToast(d.error || t('changeFailed'), 'error')
+      return r.ok
+    } catch { showToast(t('networkError'), 'error'); return false }
+  }
+
+  const handleSetSignature = async (signature) => {
+    try {
+      const r = await api('PATCH', '/auth/signature', { signature })
+      const d = await r.json()
+      if (r.ok) {
+        if (onUpdateUser) onUpdateUser({ ...user, signature: d.signature })
+        showToast(t('signatureUpdated'))
+      } else showToast(d.error || t('updateFailed'), 'error')
+      return r.ok
+    } catch { showToast(t('networkError'), 'error'); return false }
+  }
+
+  const handleUploadAvatar = async (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    try {
+      const r = await fetch(`${API}/auth/avatar`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: formData,
+      })
+      const d = await r.json()
+      if (r.ok) {
+        if (onUpdateUser) onUpdateUser({ ...user, avatar: d.avatar })
+        showToast(t('avatarUpdated'))
+      } else showToast(d.error || t('uploadFailed'), 'error')
+      return r.ok
+    } catch { showToast(t('networkError'), 'error'); return false }
+  }
+
+  const handleDeleteAccount = async (code) => {
+    try {
+      const r = await api('DELETE', '/auth/account', { code })
+      const d = await r.json()
+      if (r.ok) {
+        showToast(t('accountDeleted'))
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        setTimeout(() => onLogout(), 1000)
+      } else showToast(d.error || t('deleteFailed'), 'error')
+      return r.ok
+    } catch { showToast(t('networkError'), 'error'); return false }
+  }
+
+  return (
+    <div className="app">
+      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+      <header className="header">
+        <div className="header-left">
+          <Logo />
+          <div className="header-nav">
+            <button className={`header-nav-btn ${currentPath === '/home' ? 'active' : ''}`} onClick={() => navigate('/home')}>{t('home')}</button>
+            <button className={`header-nav-btn ${currentPath === '/privateWarehouse' ? 'active' : ''}`} onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
+            <button className={`header-nav-btn ${currentPath === '/profile' || currentPath.startsWith('/user/') ? 'active' : ''}`} onClick={() => navigate('/profile')}>{t('profile')}</button>
+          </div>
+        </div>
+        <div className="header-right">
+          {isLoggedIn ? (
+            <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
+              {avatarUrl ? (
+                <img className="user-avatar-img" src={avatarUrl} alt={user.username} />
+              ) : (
+                <span className="user-avatar">{user.username.charAt(0).toUpperCase()}</span>
+              )}
+              <span className="user-name">{user.username}</span>
+              {user.signature && <span className="user-signature">{user.signature}</span>}
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <div className="user-dropdown-item user-dropdown-email">{user.email}</div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
+                    {t('home')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
+                    {t('privateWarehouse')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
+                    {t('profile')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
+                    {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
+                    {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-settings" onClick={(e) => { e.stopPropagation(); setShowSettings(true); setShowUserMenu(false) }}>
+                    {t('accountSettings')}
+                  </div>
+                  <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
+                    {t('logout')}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="home-auth-btns">
+              <button className="btn-tool" onClick={() => navigate('/login')}>{t('login')}</button>
+              <button className="btn-tool btn-primary" onClick={() => navigate('/register')}>{t('register')}</button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <Outlet />
+
+      {/* Footer & About */}
+      <footer className="app-footer">
+        <span className="footer-link" onClick={() => setShowAbout(true)}>{t('about')}</span>
+      </footer>
+      {showAbout && (
+        <Modal onClose={() => setShowAbout(false)} title={t('aboutEmberclouds')}>
+          <div className="about-content">
+            <div className="about-section">
+              <h3 className="about-label">{t('sourceCode')}</h3>
+              <a className="about-link" href="https://github.com/Ember5714/Emberclouds" target="_blank" rel="noopener noreferrer">
+                github.com/Ember5714/Emberclouds
+              </a>
+            </div>
+            <div className="about-section">
+              <h3 className="about-label">{t('socialMedia')}</h3>
+              <div className="about-links">
+                <a className="about-link" href="https://space.bilibili.com/3493086938270254" target="_blank" rel="noopener noreferrer">
+                  bilibili: @Ember5714
+                </a>
+                <a className="about-link" href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w" target="_blank" rel="noopener noreferrer">
+                  {t('douyin')}
+                </a>
+              </div>
+            </div>
+            <div className="about-section">
+              <h3 className="about-label">{t('author')}</h3>
+              <span className="about-text">Ember5714</span>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Settings modal */}
+      {showSettings && (
+        <SettingsPage
+          user={user}
+          avatarUrl={avatarUrl}
+          onChangePassword={handleChangePassword}
+          onChangeUsername={handleChangeUsername}
+          onSetSignature={handleSetSignature}
+          onUploadAvatar={handleUploadAvatar}
+          onDeleteAccount={handleDeleteAccount}
+          onClose={() => setShowSettings(false)}
+          t={t}
+        />
+      )}
+    </div>
   )
 }
 
@@ -451,27 +674,10 @@ function VerifyPage({ email, onVerified, t }) {
 }
 
 // ============ 首页（搜索页） ============
-function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, toggleLang }) {
+function HomePage({ user, onLogin, onLogout, t }) {
   const navigate = useNavigate()
   const { lang } = useLang()
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showAbout, setShowAbout] = useState(false)
-  const userMenuRef = useRef(null)
   const searchBarRef = useRef(null)
-  const isLoggedIn = !!user
-
-  // Public profile
-  const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
-  const togglePublicProfile = async () => {
-    const newVal = !publicProfile
-    try {
-      const r = await api('PATCH', '/auth/profile', { publicProfile: newVal })
-      const d = await r.json()
-      if (r.ok) {
-        setPublicProfile(d.publicProfile)
-      }
-    } catch {}
-  }
 
   // Search
   const [searchQuery, setSearchQuery] = useState('')
@@ -520,66 +726,14 @@ function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, t
   // Close menus on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false)
       if (searchBarRef.current && !searchBarRef.current.contains(e.target)) setSearchFocused(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const avatarUrl = user && user.avatar ? `/avatars/${user.avatar}` : null
-
   return (
-    <div className="app">
-      <header className="header">
-        <div className="header-left">
-          <Logo />
-          <div className="header-nav">
-            <button className="header-nav-btn active">{t('home')}</button>
-            <button className="header-nav-btn" onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
-            <button className="header-nav-btn" onClick={() => navigate('/profile')}>{t('profile')}</button>
-          </div>
-        </div>
-        <div className="header-right">
-          {isLoggedIn ? (
-            <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
-              {avatarUrl ? (
-                <img className="user-avatar-img" src={avatarUrl} alt={user.username} />
-              ) : (
-                <span className="user-avatar">{user.username.charAt(0).toUpperCase()}</span>
-              )}
-              <span className="user-name">{user.username}</span>
-              {user.signature && <span className="user-signature">{user.signature}</span>}
-              {showUserMenu && (
-                <div className="user-dropdown">
-                  <div className="user-dropdown-item user-dropdown-email">{user.email}</div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
-                    {t('privateWarehouse')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/profile'); setShowUserMenu(false) }}>
-                    {t('profile')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
-                    {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
-                    {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
-                  </div>
-                  <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
-                    {t('logout')}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="home-auth-btns">
-              <button className="btn-tool" onClick={() => navigate('/login')}>{t('login')}</button>
-              <button className="btn-tool btn-primary" onClick={() => navigate('/register')}>{t('register')}</button>
-            </div>
-          )}
-        </div>
-      </header>
-
+    <>
       {/* 居中搜索区域 */}
       <div className="home-search">
         <div className="home-search-inner">
@@ -656,43 +810,12 @@ function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, t
           </div>
         </div>
       </div>
-
-      <footer className="app-footer">
-        <span className="footer-link" onClick={() => setShowAbout(true)}>{t('about')}</span>
-      </footer>
-      {showAbout && (
-        <Modal onClose={() => setShowAbout(false)} title={t('aboutEmberclouds')}>
-          <div className="about-content">
-            <div className="about-section">
-              <h3 className="about-label">{t('sourceCode')}</h3>
-              <a className="about-link" href="https://github.com/Ember5714/Emberclouds" target="_blank" rel="noopener noreferrer">
-                github.com/Ember5714/Emberclouds
-              </a>
-            </div>
-            <div className="about-section">
-              <h3 className="about-label">{t('socialMedia')}</h3>
-              <div className="about-links">
-                <a className="about-link" href="https://space.bilibili.com/3493086938270254" target="_blank" rel="noopener noreferrer">
-                  bilibili: @Ember5714
-                </a>
-                <a className="about-link" href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w" target="_blank" rel="noopener noreferrer">
-                  {t('douyin')}
-                </a>
-              </div>
-            </div>
-            <div className="about-section">
-              <h3 className="about-label">{t('author')}</h3>
-              <span className="about-text">Ember5714</span>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </div>
+    </>
   )
 }
 
 // ============ 主应用（已登录） ============
-function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t }) {
+function MainApp({ user, onLogout, pageMode, t }) {
   const params = useParams()
   const navigate = useNavigate()
   const [dir, setDir] = useState(null)
@@ -733,7 +856,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [renameTarget, setRenameTarget] = useState(null)
   const [notify, setNotify] = useState(null)
-  const [showUserMenu, setShowUserMenu] = useState(false)
 
   // 公开/私密
   const [visibility, setVisibility] = useState(pageMode === 'public' || pageMode === 'profile' ? 'public' : 'private')
@@ -743,8 +865,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     if (pageMode === 'public' || pageMode === 'profile') setVisibility('public')
     else if (pageMode === 'private') setVisibility('private')
   }, [pageMode])
-  const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
-
   // 搜索用户
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -752,14 +872,10 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
   const [searchError, setSearchError] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
 
-  // 点击外部关闭下拉
-  const userMenuRef = useRef(null)
+  // 点击外部关闭搜索下拉
   const searchBarRef = useRef(null)
   useEffect(() => {
     const handler = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
-        setShowUserMenu(false)
-      }
       if (searchBarRef.current && !searchBarRef.current.contains(e.target)) {
         setSearchFocused(false)
       }
@@ -779,11 +895,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     try { return JSON.parse(localStorage.getItem('lt_search_history') || '[]') }
     catch { return [] }
   })
-
-  // 设置
-  const [showSettings, setShowSettings] = useState(false)
-  const [showAbout, setShowAbout] = useState(false)
-  const [currentUser, setCurrentUser] = useState(user) // 动态更新用户信息
 
   const toast = useCallback((msg, type = 'info') => {
     setNotify({ msg, type, id: Date.now() })
@@ -1134,164 +1245,24 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     e.target.value = ''
   }
 
-  // 切换公开资料
-  const togglePublicProfile = async () => {
-    const newVal = !publicProfile
-    try {
-      const r = await api('PATCH', '/auth/profile', { publicProfile: newVal })
-      const d = await r.json()
-      if (r.ok) {
-        setPublicProfile(d.publicProfile)
-        toast(d.publicProfile ? t('publicProfileEnabled') : t('publicProfileDisabled'))
-      } else {
-        toast(d.error || t('operationFailed'), 'error')
-      }
-    } catch { toast(t('networkError'), 'error') }
-  }
-
-  // 修改密码
-  const handleChangePassword = async (code, newPw) => {
-    try {
-      const r = await api('PATCH', '/auth/password', { code, newPassword: newPw })
-      const d = await r.json()
-      if (r.ok) toast(t('passwordChanged'))
-      else toast(d.error || t('changeFailed'), 'error')
-      return r.ok
-    } catch { toast(t('networkError'), 'error'); return false }
-  }
-
-  // 修改用户名
-  const handleChangeUsername = async (newName) => {
-    try {
-      const r = await api('PATCH', '/auth/username', { username: newName })
-      const d = await r.json()
-      if (r.ok) {
-        setCurrentUser((prev) => ({ ...prev, username: d.username }))
-        toast(t('usernameChanged'))
-      } else toast(d.error || t('changeFailed'), 'error')
-      return r.ok
-    } catch { toast(t('networkError'), 'error'); return false }
-  }
-
-  // 修改个性签名
-  const handleSetSignature = async (signature) => {
-    try {
-      const r = await api('PATCH', '/auth/signature', { signature })
-      const d = await r.json()
-      if (r.ok) {
-        setCurrentUser((prev) => ({ ...prev, signature: d.signature }))
-        toast(t('signatureUpdated'))
-      } else toast(d.error || t('updateFailed'), 'error')
-      return r.ok
-    } catch { toast(t('networkError'), 'error'); return false }
-  }
-
-  // 上传头像
-  const handleUploadAvatar = async (file) => {
-    const formData = new FormData()
-    formData.append('avatar', file)
-    try {
-      const r = await fetch(`${API}/auth/avatar`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: formData,
-      })
-      const d = await r.json()
-      if (r.ok) {
-        setCurrentUser((prev) => ({ ...prev, avatar: d.avatar }))
-        toast(t('avatarUpdated'))
-      } else toast(d.error || t('uploadFailed'), 'error')
-      return r.ok
-    } catch { toast(t('networkError'), 'error'); return false }
-  }
-
-  // 注销账号
-  const handleDeleteAccount = async (code) => {
-    try {
-      const r = await api('DELETE', '/auth/account', { code })
-      const d = await r.json()
-      if (r.ok) {
-        toast(t('accountDeleted'))
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        setTimeout(() => onLogout(), 1000)
-      } else toast(d.error || t('deleteFailed'), 'error')
-      return r.ok
-    } catch { toast(t('networkError'), 'error'); return false }
-  }
-
-  const avatarUrl = (currentUser && currentUser.avatar) ? `/avatars/${currentUser.avatar}` : null
-
   const selectedStats = selected.length > 0
     ? t('selectedItems').replace('{count}', selected.length).replace('{size}', formatSize(selected.reduce((s, i) => s + (i.size || 0), 0)))
     : ''
 
   return (
-    <div className="app">
+    <>
       {notify && <div className={`toast toast-${notify.type}`}>{notify.msg}</div>}
 
       {isProfileView ? (
         /* ========== 个人主页 / 他人仓库 独立页面 ========== */
         <>
-          <header className="header">
-            <div className="header-left">
-              <Logo />
-              <div className="header-nav">
-                <button className={`header-nav-btn ${pageMode === 'home' ? 'active' : ''}`} onClick={() => navigate('/home')}>{t('home')}</button>
-                <button className={`header-nav-btn ${pageMode === 'private' ? 'active' : ''}`} onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
-                <button className={`header-nav-btn ${(pageMode === 'profile' || pageMode === 'user') ? 'active' : ''}`} onClick={() => navigate('/profile')}>{t('profile')}</button>
-              </div>
+          {viewingOwnProfile || profileInfo ? (
+            <div className="profile-page-title-bar">
               <span className="profile-page-title">
                 {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
               </span>
             </div>
-            <div className="header-right">
-              {user ? (
-                <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
-                  {avatarUrl ? (
-                    <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
-                  ) : (
-                    <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
-                  )}
-                  <span className="user-name">{currentUser.username}</span>
-                  {currentUser.signature && <span className="user-signature">{currentUser.signature}</span>}
-                  {showUserMenu && (
-                    <div className="user-dropdown">
-                      <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
-                      <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
-                        {t('home')}
-                      </div>
-                      <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
-                        {t('privateWarehouse')}
-                      </div>
-                      <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
-                        {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
-                      </div>
-                      <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
-                        {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
-                      </div>
-                      {!viewingOwnProfile && (
-                        <div className="user-dropdown-item user-dropdown-profile" onClick={(e) => { e.stopPropagation(); openOwnProfile(); setShowUserMenu(false) }}>
-                          {t('profile')}
-                        </div>
-                      )}
-                      <div className="user-dropdown-item user-dropdown-settings" onClick={(e) => { e.stopPropagation(); setShowSettings(true); setShowUserMenu(false) }}>
-                        {t('accountSettings')}
-                      </div>
-                      <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
-                        {t('logout')}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="home-auth-btns">
-                  <button className="btn-tool" onClick={() => navigate('/login')}>{t('login')}</button>
-                  <button className="btn-tool btn-primary" onClick={() => navigate('/register')}>{t('register')}</button>
-                </div>
-              )}
-            </div>
-          </header>
+          ) : null}
 
           {profileInfo && (
             <ProfileCard
@@ -1422,53 +1393,6 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
       ) : (
         /* ========== 正常文件浏览器 ========== */
         <>
-          <header className="header">
-            <div className="header-left">
-              <Logo />
-              <div className="header-nav">
-                <button className="header-nav-btn" onClick={() => navigate('/home')}>{t('home')}</button>
-                <button className="header-nav-btn active" onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
-                <button className="header-nav-btn" onClick={() => navigate('/profile')}>{t('profile')}</button>
-              </div>
-            </div>
-            <div className="header-right">
-              <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
-                {avatarUrl ? (
-                  <img className="user-avatar-img" src={avatarUrl} alt={currentUser.username} />
-                ) : (
-                  <span className="user-avatar">{currentUser.username.charAt(0).toUpperCase()}</span>
-                )}
-                <span className="user-name">{currentUser.username}</span>
-                {currentUser.signature && <span className="user-signature">{currentUser.signature}</span>}
-                {showUserMenu && (
-                  <div className="user-dropdown">
-                    <div className="user-dropdown-item user-dropdown-email">{currentUser.email}</div>
-                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/home'); setShowUserMenu(false) }}>
-                      {t('home')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-nav" onClick={(e) => { e.stopPropagation(); navigate('/privateWarehouse'); setShowUserMenu(false) }}>
-                      {t('privateWarehouse')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-theme" onClick={(e) => { e.stopPropagation(); cycleTheme(); }}>
-                      {t('themeLabel')}: {theme === 'auto' ? t('themeFollowSystem') : theme === 'dark' ? t('themeDark') : t('themeLight')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-toggle" onClick={togglePublicProfile}>
-                      {publicProfile ? t('publicWarehouseOn') : t('publicWarehouseOff')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-profile" onClick={(e) => { e.stopPropagation(); openOwnProfile(); setShowUserMenu(false) }}>
-                      {t('profile')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-settings" onClick={(e) => { e.stopPropagation(); setShowSettings(true); setShowUserMenu(false) }}>
-                      {t('accountSettings')}
-                    </div>
-                    <div className="user-dropdown-item user-dropdown-logout" onClick={onLogout}>
-                      {t('logout')}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
 
           {/* 搜索栏 */}
           <div className="search-bar" ref={searchBarRef}>
@@ -1692,51 +1616,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
           )}
         </>
       )}
-      {showSettings && (
-        <SettingsPage
-          user={currentUser}
-          avatarUrl={avatarUrl}
-          onChangePassword={handleChangePassword}
-          onChangeUsername={handleChangeUsername}
-          onSetSignature={handleSetSignature}
-          onUploadAvatar={handleUploadAvatar}
-          onDeleteAccount={handleDeleteAccount}
-          onClose={() => setShowSettings(false)}
-          t={t}
-        />
-      )}
-      {/* 页脚 */}
-      <footer className="app-footer">
-        <span className="footer-link" onClick={() => setShowAbout(true)}>{t('about')}</span>
-      </footer>
-      {showAbout && (
-        <Modal onClose={() => setShowAbout(false)} title={t('aboutEmberclouds')}>
-          <div className="about-content">
-            <div className="about-section">
-              <h3 className="about-label">{t('sourceCode')}</h3>
-              <a className="about-link" href="https://github.com/Ember5714/Emberclouds" target="_blank" rel="noopener noreferrer">
-                github.com/Ember5714/Emberclouds
-              </a>
-            </div>
-            <div className="about-section">
-              <h3 className="about-label">{t('socialMedia')}</h3>
-              <div className="about-links">
-                <a className="about-link" href="https://space.bilibili.com/3493086938270254" target="_blank" rel="noopener noreferrer">
-                  bilibili: @Ember5714
-                </a>
-                <a className="about-link" href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w" target="_blank" rel="noopener noreferrer">
-                  {t('douyin')}
-                </a>
-              </div>
-            </div>
-            <div className="about-section">
-              <h3 className="about-label">{t('author')}</h3>
-              <span className="about-text">Ember5714</span>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </div>
+    </>
   )
 }
 

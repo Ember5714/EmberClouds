@@ -906,6 +906,11 @@ body {
   border-bottom: 1px solid var(--border-light);
 }
 
+.profile-page-title-bar {
+  padding: 18px 20px; background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 12px;
+}
+
 .profile-page-title {
   font-size: 18px;
   font-weight: 700;
