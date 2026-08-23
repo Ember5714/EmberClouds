@@ -793,7 +793,8 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
   const loadDir = useCallback(async (dirPath, targetPublicUser, visOverride) => {
     const pu = targetPublicUser !== undefined ? targetPublicUser : publicUser
     const vis = visOverride !== undefined ? visOverride : visibility
-    setLoading(true)
+    // 只在首次加载时显示骨架屏，页面切换时保持旧内容可见
+    if (items.length === 0) setLoading(true)
     try {
       let url
       if (pu) {
