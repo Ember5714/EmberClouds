@@ -1256,14 +1256,6 @@ function MainApp({ user, onLogout, pageMode, t }) {
       {isProfileView ? (
         /* ========== 个人主页 / 他人仓库 独立页面 ========== */
         <>
-          {viewingOwnProfile || profileInfo ? (
-            <div className="profile-page-title-bar">
-              <span className="profile-page-title">
-                {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
-              </span>
-            </div>
-          ) : null}
-
           {profileInfo && (
             <ProfileCard
               profile={profileInfo}
