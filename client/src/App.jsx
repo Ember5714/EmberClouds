@@ -534,6 +534,11 @@ function HomePage({ user, onLogin, onLogout, themeLabel, cycleTheme, theme, t, t
       <header className="header">
         <div className="header-left">
           <Logo />
+          <div className="header-nav">
+            <button className="header-nav-btn active">{t('home')}</button>
+            <button className="header-nav-btn" onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
+            <button className="header-nav-btn" onClick={() => navigate('/profile')}>{t('profile')}</button>
+          </div>
         </div>
         <div className="header-right">
           {isLoggedIn ? (
@@ -1229,10 +1234,12 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
         <div className="profile-page">
           <header className="header">
             <div className="header-left">
-              <button className="btn-back" onClick={viewingOwnProfile ? closeOwnProfile : backToMySpace}>
-                {t('backToMyWarehouse')}
-              </button>
               <Logo />
+              <div className="header-nav">
+                <button className={`header-nav-btn ${pageMode === 'home' ? 'active' : ''}`} onClick={() => navigate('/home')}>{t('home')}</button>
+                <button className={`header-nav-btn ${pageMode === 'private' ? 'active' : ''}`} onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
+                <button className={`header-nav-btn ${(pageMode === 'profile' || pageMode === 'user') ? 'active' : ''}`} onClick={() => navigate('/profile')}>{t('profile')}</button>
+              </div>
               <span className="profile-page-title">
                 {viewingOwnProfile ? t('myProfile') : t('publicWarehouseOf').replace('{name}', profileInfo?.username || 'User')}
               </span>
@@ -1417,6 +1424,11 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
           <header className="header">
             <div className="header-left">
               <Logo />
+              <div className="header-nav">
+                <button className="header-nav-btn" onClick={() => navigate('/home')}>{t('home')}</button>
+                <button className="header-nav-btn active" onClick={() => navigate('/privateWarehouse')}>{t('privateWarehouse')}</button>
+                <button className="header-nav-btn" onClick={() => navigate('/profile')}>{t('profile')}</button>
+              </div>
             </div>
             <div className="header-right">
               <div className="user-menu" ref={userMenuRef} onClick={(e) => { e.stopPropagation(); setShowUserMenu(prev => !prev) }}>
