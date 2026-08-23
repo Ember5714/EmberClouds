@@ -741,7 +741,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     if (pageMode === 'public') setVisibility('public')
     else if (pageMode === 'private') setVisibility('private')
   }, [pageMode])
-  const [publicProfile, setPublicProfile] = useState(!!user.publicProfile)
+  const [publicProfile, setPublicProfile] = useState(!!(user && user.publicProfile))
 
   // 搜索用户
   const [searchQuery, setSearchQuery] = useState('')
@@ -1095,7 +1095,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
 
   // 关闭个人主页（返回我的仓库）
   const closeOwnProfile = () => navigate('/privateWarehouse')
-  const backToMySpace = () => navigate('/privateWarehouse')
+  const backToMySpace = () => navigate(user ? '/privateWarehouse' : '/home')
 
   // 保存个人简介
   const handleSaveBio = async () => {
