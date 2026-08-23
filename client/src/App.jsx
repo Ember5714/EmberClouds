@@ -1217,7 +1217,7 @@ function MainApp({ user, onLogout, pageMode, themeLabel, cycleTheme, theme, t })
     } catch { toast(t('networkError'), 'error'); return false }
   }
 
-  const avatarUrl = currentUser.avatar ? `/avatars/${currentUser.avatar}` : null
+  const avatarUrl = (currentUser && currentUser.avatar) ? `/avatars/${currentUser.avatar}` : null
 
   const selectedStats = selected.length > 0
     ? t('selectedItems').replace('{count}', selected.length).replace('{size}', formatSize(selected.reduce((s, i) => s + (i.size || 0), 0)))
