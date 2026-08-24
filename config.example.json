@@ -15,7 +15,7 @@
     "uploadCooldown": 10000
   },
   "smtp": {
-    "host": "smtp-mail.outlook.com",
+    "host": "smtp-mail.example.com",
     "port": 587,
     "user": "admin@example.com",
     "pass": "your_smtp_password"
