@@ -4,6 +4,8 @@
   <strong>LAN File Transfer &amp; Sharing Platform</strong>
 </p>
 
+<img width="1910" height="915" alt="image" src="https://github.com/user-attachments/assets/eaa08558-3f0b-46df-a597-413c231127b3" />
+
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
   <a href="https://github.com/Ember5714/EmberClouds/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License">

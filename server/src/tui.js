@@ -27,78 +27,78 @@ function bg(c) { return sgr(48, 5, c); }
 function reset() { return sgr(0); }
 
 // ========== Logo ==========
-// Each letter is 5 rows tall, rendered as colored ██ blocks
-// Format: [row][col] = { char, color }
+// Each letter is 5 rows tall, 5 columns wide (fixed-width pixel font).
+// Every row is exactly 5 chars so all letters align and space evenly.
 const LOGO_LETTERS = {
   E: [
-    '███ ',
-    '█   ',
-    '███ ',
-    '█   ',
-    '███ ',
+    '█████',
+    '█    ',
+    '████ ',
+    '█    ',
+    '█████',
   ],
   M: [
-    '█ █ ',
-    '███ ',
-    '█ █ ',
-    '█ █ ',
-    '█ █ ',
+    '█   █',
+    '██ ██',
+    '█ █ █',
+    '█   █',
+    '█   █',
   ],
   B: [
-    '███ ',
-    '█ █ ',
-    '███ ',
-    '█ █ ',
-    '███ ',
+    '████ ',
+    '█   █',
+    '████ ',
+    '█   █',
+    '████ ',
   ],
   R: [
-    '███ ',
-    '█ █ ',
-    '███ ',
-    '█ █ ',
-    '█ █ ',
+    '████ ',
+    '█   █',
+    '████ ',
+    '█  █ ',
+    '█   █',
   ],
   C: [
-    ' ███',
-    '█   ',
-    '█   ',
-    '█   ',
-    ' ███',
+    ' ████',
+    '█    ',
+    '█    ',
+    '█    ',
+    ' ████',
   ],
   L: [
-    '█   ',
-    '█   ',
-    '█   ',
-    '█   ',
-    '███ ',
+    '█    ',
+    '█    ',
+    '█    ',
+    '█    ',
+    '█████',
   ],
   O: [
-    ' ██ ',
-    '█  █',
-    '█  █',
-    '█  █',
-    ' ██ ',
+    ' ███ ',
+    '█   █',
+    '█   █',
+    '█   █',
+    ' ███ ',
   ],
   U: [
-    '█  █',
-    '█  █',
-    '█  █',
-    '█  █',
-    ' ██ ',
+    '█   █',
+    '█   █',
+    '█   █',
+    '█   █',
+    ' ███ ',
   ],
   D: [
-    '███ ',
-    '█  █',
-    '█  █',
-    '█  █',
-    '███ ',
+    '████ ',
+    '█   █',
+    '█   █',
+    '█   █',
+    '████ ',
   ],
   S: [
-    ' ███',
-    '█   ',
-    ' ██ ',
-    '   █',
-    '███ ',
+    ' ████',
+    '█    ',
+    ' ███ ',
+    '    █',
+    '████ ',
   ],
 };
 
@@ -115,7 +115,7 @@ function renderLogo() {
     const pattern = LOGO_LETTERS[letter];
     const color = letterColors[i];
     for (let r = 0; r < 5; r++) {
-      rows[r] += fg(color) + pattern[r].replace(/█/g, '██').replace(/ /g, '  ') + reset();
+      rows[r] += fg(color) + pattern[r] + reset() + ' ';
     }
   }
 
@@ -132,8 +132,7 @@ function renderHeader(width) {
   const lines = [];
   lines.push('');
   for (const row of logo) {
-    const pad = Math.max(0, Math.floor((width - (row.length / 2)) / 2));
-    // Approximate visual width (each ██ is 2 chars, colors don't count)
+    // Strip ANSI color codes to measure the logo's real visual width
     const visualWidth = row.replace(/\x1b\[[0-9;]*m/g, '').length;
     const leftPad = Math.max(0, Math.floor((width - visualWidth) / 2));
     lines.push(' '.repeat(leftPad) + row);
@@ -343,9 +342,10 @@ class Tui {
   }
 
   _logVisibleLines() {
-    // Calculate how many log lines fit in the menu area
-    const linesForMenu = Math.min(this._menuItems.length, this._visibleItems) + 3;
-    return Math.max(0, linesForMenu - 2); // Reserve 2 lines for header + hint
+    // The log viewer fills most of the screen below the logo.
+    // Reserve space for: logo (8) + blank (1) + log header (2)
+    // + bottom divider (1) + hint (1). That's 13 reserved lines total.
+    return Math.max(3, this.height - 13);
   }
 
   // ========== Resize ==========
@@ -368,14 +368,45 @@ class Tui {
   render() {
     if (!this.running) return;
     const w = this.width;
-    const status = this._getStatus();
-    const devices = this._getDevices();
 
     let output = '';
     output += clear;
-
-    // === Header: Logo ===
     output += renderHeader(w);
+
+    // === Full-screen Log Viewer ===
+    if (this._logMode) {
+      output += '\n';
+      output += sgr(1, 38, 5, 226) + '  ⬡ Log Viewer' + reset() + sgr(38, 5, 240) + ' — ↑↓ scroll  Esc back' + reset() + '\n';
+      output += renderDivider(w, '─') + '\n';
+
+      const visible = this._logVisibleLines();
+      const total = this.messages.length;
+      const maxScroll = Math.max(0, total - visible);
+      if (this._logScroll > maxScroll) this._logScroll = maxScroll;
+      const start = this._logScroll;
+      const end = Math.min(start + visible, total);
+
+      if (total === 0) {
+        output += '  ' + sgr(38, 5, 240) + '(no messages)' + reset() + '\n';
+      } else {
+        for (let i = start; i < end; i++) {
+          output += '  ' + sgr(38, 5, 240) + this.messages[i] + reset() + '\n';
+        }
+      }
+
+      output += renderDivider(w, '═') + '\n';
+      if (total > visible) {
+        output += sgr(38, 5, 240) + `  (${start + 1}-${end}/${total})  ↑↓ scroll  Esc back` + reset();
+      } else {
+        output += sgr(38, 5, 240) + `  (${total} lines)  Esc back` + reset();
+      }
+
+      process.stdout.write(output);
+      return;
+    }
+
+    const status = this._getStatus();
+    const devices = this._getDevices();
 
     // === Status Panel ===
     output += '\n';
@@ -441,29 +472,7 @@ class Tui {
 
     // === Menu / Input ===
     output += renderDivider(w, '═') + '\n';
-    if (this._logMode) {
-      output += sgr(1, 38, 5, 226) + '  ⬡ Log Viewer' + reset() + sgr(38, 5, 240) + ' — Esc to close' + reset() + '\n';
-      output += renderDivider(w, '─') + '\n';
-      const visible = this._logVisibleLines();
-      if (this.messages.length === 0) {
-        output += '  ' + sgr(38, 5, 240) + '(no messages)' + reset() + '\n';
-      } else {
-        const start = this._logScroll;
-        const end = Math.min(start + visible, this.messages.length);
-        for (let i = start; i < end; i++) {
-          const padding = Math.max(0, w - 4 - this.messages[i].replace(/\x1b\[[0-9;]*m/g, '').length);
-          output += '  ' + sgr(38, 5, 240) + this.messages[i] + reset() + '\n';
-        }
-      }
-      // Fill remaining lines
-      const shown = Math.min(visible, this.messages.length - this._logScroll);
-      for (let i = shown; i < visible; i++) output += '\n';
-      if (this.messages.length > visible) {
-        output += sgr(38, 5, 240) + '  (' + (this._logScroll + 1) + '-' + Math.min(this._logScroll + visible, this.messages.length) + '/' + this.messages.length + ') ' + reset() + sgr(38, 5, 240) + '↑↓ scroll  Esc back' + reset();
-      } else {
-        output += sgr(38, 5, 240) + '  ↑↓ scroll  Esc back' + reset();
-      }
-    } else if (this._argMode) {
+    if (this._argMode) {
       output += sgr(38, 5, 240) + '  Enter path for ' + sgr(1, 38, 5, 226) + this._argForCmd.cmd + reset() + sgr(38, 5, 240) + ' | Esc to cancel' + reset() + '\n';
       output += sgr(38, 5, 226) + '  ' + this._argForCmd.cmd + ' ' + reset() + this._argInput;
     } else {
