@@ -2,19 +2,12 @@
  * Emberclouds TUI — Terminal User Interface
  * Color-block logo + real-time status dashboard
  */
-const readline = require('readline');
-const os = require('os');
-
 // ========== ANSI Helpers ==========
 const CSI = '\x1b[';
-const cup = (r, c) => CSI + r + ';' + c + 'H';
 const sgr = (...codes) => CSI + codes.join(';') + 'm';
 const clear = CSI + '2J' + CSI + 'H';
-const clearLine = CSI + '2K';
 const hideCursor = CSI + '?25l';
 const showCursor = CSI + '?25h';
-const saveCursor = CSI + 's';
-const restoreCursor = CSI + 'u';
 
 // ========== Color Palette ==========
 // Ember (warm gradient): red → orange → amber → yellow
@@ -23,7 +16,6 @@ const EMBER = [196, 202, 208, 214, 220, 226, 190, 154, 118, 82, 46];
 const CLOUD = [51, 45, 39, 33, 27, 21, 57, 93, 129, 165, 201];
 
 function fg(c) { return sgr(38, 5, c); }
-function bg(c) { return sgr(48, 5, c); }
 function reset() { return sgr(0); }
 
 // ========== Logo ==========

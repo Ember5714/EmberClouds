@@ -8,6 +8,7 @@ const path = require('path');
 const fsp = require('fs/promises');
 const zlib = require('zlib');
 const crypto = require('crypto');
+const multer = require('multer');
 const config = require('./config');
 const fileCrypto = require('./fileCrypto');
 
@@ -217,7 +218,6 @@ class FileServer {
 
   // Multer upload handler (files encrypted by index.js upload route after multer saves)
   createUploadHandler() {
-    const multer = require('multer');
     const storage = multer.diskStorage({
       destination: (req, file, cb) => {
         // Use req.user.id from auth middleware instead of req.body.userId to prevent user isolation bypass
@@ -244,7 +244,6 @@ class FileServer {
   }
 
   _createImageUploadHandler(maxSizeMB, tmpPrefix) {
-    const multer = require('multer');
     const tmpDir = path.join(config.ROOT_DIR, 'data', 'tmp');
     const storage = multer.diskStorage({
       destination: (req, file, cb) => {
