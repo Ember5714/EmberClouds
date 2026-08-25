@@ -4,7 +4,7 @@
   <strong>LAN File Transfer &amp; Sharing Platform</strong>
 </p>
 
-<img width="1910" height="915" alt="image" src="https://github.com/user-attachments/assets/eaa08558-3f0b-46df-a597-413c231127b3" />
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node">
@@ -18,7 +18,7 @@
   <a href="https://space.bilibili.com/3493086938270254"><img src="https://img.shields.io/badge/bilibili-00A1D6?logo=bilibili&logoColor=white" alt="Bilibili"></a>
   <a href="https://www.douyin.com/user/MS4wLjABAAAARFMQwKlxUI_B0j0cQwzbeJbZKuBI5QuyesZLXgKdD1w"><img src="https://img.shields.io/badge/douyin-000000?logo=tiktok&logoColor=white" alt="抖音(douyin)"></a>
 </p>
-
+<img width="1910" height="915" alt="image" src="https://github.com/user-attachments/assets/eaa08558-3f0b-46df-a597-413c231127b3" />
 ---
 
 **[English](#english) &nbsp;|&nbsp; [简体中文](#简体中文) &nbsp;|&nbsp; [繁體中文](#繁體中文)**
