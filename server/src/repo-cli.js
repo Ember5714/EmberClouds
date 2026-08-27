@@ -1,7 +1,7 @@
 /**
  * Repository CLI Commands
  * Provides ls, tree, rm, mkdir, du, info commands
- * Supports output redirection via setLogger() for TUI integration
+ * Supports output redirection via setLogger() for CLI integration
  */
 const fs = require('fs');
 const path = require('path');

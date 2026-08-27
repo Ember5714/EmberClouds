@@ -42,7 +42,7 @@ Supports Windows, Linux, and macOS.
 - **Download** — HTTP Range support for resumable downloads
 - **Image preview** — click any image to open a full-size lightbox
 - **Dark theme** — auto (follows system settings) or manual toggle
-- **Server TUI** — real-time dashboard with color logo, live status, device discovery, and file management
+- **Server CLI** — interactive command console for server status, user management, and file management
 - **Cross-platform** — works on Windows, Linux, and macOS
 - **Public access** — built-in frp config for exposing your server to the internet via a VPS
 - **Auto-setup** — `start.bat` (Windows) or `start.sh` (Linux/macOS) detects missing dependencies and installs them automatically
@@ -137,12 +137,13 @@ If SMTP is not configured, verification codes are printed to the server console.
 
 To go public: open the avatar menu → toggle "Public repo" → switch to the public space and upload files → other users can now find you via search.
 
-### Server TUI
+### Server CLI
 
-The server features a full-color terminal dashboard with real-time status updates, device discovery, and a log panel. Navigate with arrow keys — no typing required:
+The server includes a text-based command console. Type commands at the `ember>` prompt:
 
 | Command | Description |
 |---------|-------------|
+| `help` | Show all available commands |
 | `status` | Show server status and network info |
 | `users` | List all registered users |
 | `ls [path]` | List files in a directory |
@@ -151,10 +152,11 @@ The server features a full-color terminal dashboard with real-time status update
 | `mkdir <path>` | Create a directory |
 | `rm -y <path>` | Delete a file or directory (requires `-y` flag) |
 | `config` | Show current configuration |
-| `clear` | Clear the message log |
+| `clear` | Clear the terminal |
 | `stop` / `restart` | Stop or restart the server |
+| `exit` / `quit` | Shut down the server |
 
-Press `L` to open the full log viewer — scroll with ↑↓, press Esc to return. Press Ctrl+C to shutdown.
+Press Ctrl+C at any time to shut down.
 
 ### Public Access (frp)
 
@@ -172,7 +174,6 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 
 ```
 ├── start.bat               # One-click startup (auto-install + launch)
-├── start.ps1               # PowerShell alternative
 ├── start.sh                # Linux/macOS startup script
 ├── .gitignore
 ├── LICENSE
@@ -180,8 +181,8 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 ├── server/                 # Backend (Express)
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # Entry point + API routes + TUI
-│       ├── tui.js           # Terminal UI (color dashboard + commands)
+│       ├── index.js        # Entry point + API routes
+│       ├── cli.js           # Command-line interface (readline REPL)
 │       ├── config.js       # Configuration
 │       ├── auth.js         # Token authentication
 │       ├── users.js        # User system (encrypted data storage)
@@ -189,7 +190,7 @@ Edit `frpc.toml` — set `serverAddr` and `auth.token` — then run `start-frpc.
 │       ├── fileCrypto.js   # AES-256-CTR at-rest file encryption
 │       ├── fileLock.js     # Concurrent write queue lock
 │       ├── rateLimit.js    # IP-based rate limiting
-│       ├── repo-cli.js     # TUI file management commands
+│       ├── repo-cli.js     # CLI file management commands
 │       ├── discovery.js    # LAN device discovery (HMAC-signed UDP)
 │       └── wsServer.js     # WebSocket notifications
 ├── client/                 # Frontend (React + Vite)
@@ -350,7 +351,7 @@ Forward port 3000 on your router, or use the built-in frp tunnel (see Public Acc
 - **文件下载** — 基于 HTTP Range 协议实现断点续传
 - **图片预览** — 点击图片弹出灯箱查看原图
 - **深色模式** — 支持跟随系统主题自动切换，亦可手动切换
-- **终端仪表盘** — 全彩 TUI 实时仪表盘，展示运行状态、设备发现、日志面板，支持 Tab 补全和方向键历史
+- **服务端 CLI** — 交互式命令控制台，支持服务状态、用户管理和文件管理
 - **跨平台** — 支持 Windows、Linux、macOS
 - **公网接入** — 内置 frp 反向代理配置，配合 VPS 即可将服务暴露至公网
 - **开箱即用** — `start.bat`（Windows）或 `start.sh`（Linux/macOS）一键启动，自动检测并安装缺失的依赖
@@ -445,12 +446,13 @@ Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start
 
 开启公开仓库：点击头像 → 开启"公开仓库" → 切换至公开空间上传文件 → 其他用户可通过用户名搜索到您。
 
-### 服务端 TUI
+### 服务端 CLI
 
-服务端启动后会显示全彩终端仪表盘，实时展示运行状态、网络信息和设备发现。上下键选择菜单项，无需手动输入命令：
+服务端内置基于文本的命令控制台。在 `ember>` 提示符下输入命令：
 
 | 命令 | 功能描述 |
 |------|--------|
+| `help` | 显示所有可用命令 |
 | `status` | 查看服务器运行状态和网络信息 |
 | `users` | 查看已注册用户列表 |
 | `ls [路径]` | 列出目录内容 |
@@ -459,10 +461,11 @@ Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start
 | `mkdir <路径>` | 创建目录 |
 | `rm -y <路径>` | 删除文件或目录（需 `-y` 确认） |
 | `config` | 查看当前运行配置 |
-| `clear` | 清空日志面板 |
+| `clear` | 清空终端 |
 | `stop` / `restart` | 停止 / 重启服务器 |
+| `exit` / `quit` | 关闭服务器 |
 
-按 `L` 键打开完整日志查看器，↑↓ 滚动翻阅，Esc 返回。按 Ctrl+C 关闭服务器。
+随时按 Ctrl+C 关闭服务器。
 
 ### 公网访问（frp）
 
@@ -480,15 +483,14 @@ Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start
 
 ```
 ├── start.bat               # 一键启动脚本（自动安装依赖 + 启动服务）
-├── start.ps1               # PowerShell 启动脚本（备选）
 ├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── server/                 # 后端服务（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模块 + API 路由 + TUI 交互
-│       ├── tui.js           # 终端仪表盘（彩色面板 + 命令交互）
+│       ├── index.js        # 入口模块 + API 路由
+│       ├── cli.js           # 命令行界面（readline 交互控制台）
 │       ├── config.js       # 全局配置
 │       ├── auth.js         # Token 身份认证
 │       ├── users.js        # 用户系统逻辑（加密数据存储）
@@ -496,7 +498,7 @@ Windows 系统下可直接双击 `start.bat`，Linux/macOS 下运行 `bash start
 │       ├── fileCrypto.js   # AES-256-CTR 静态文件加密
 │       ├── fileLock.js     # 并发写入队列锁
 │       ├── rateLimit.js    # IP 频率限制
-│       ├── repo-cli.js     # TUI 仓库管理命令
+│       ├── repo-cli.js     # CLI 仓库管理命令
 │       ├── discovery.js    # 局域网设备发现（HMAC 签名 UDP）
 │       └── wsServer.js     # WebSocket 消息推送
 ├── client/                 # 前端应用（React + Vite）
@@ -657,7 +659,7 @@ netsh advfirewall firewall add rule name="Emberclouds-Discovery" dir=in action=a
 - **檔案下載** — 基於 HTTP Range 協定實現斷點續傳
 - **圖片預覽** — 點擊圖片彈出燈箱檢視原圖
 - **深色模式** — 支援跟隨系統主題自動切換，亦可手動切換
-- **終端儀表板** — 全彩 TUI 即時儀表板，展示執行狀態、裝置發現、日誌面板，支援 Tab 補全和方向鍵歷史
+- **伺服器 CLI** — 互動式命令控制台，支援服務狀態、用戶管理和檔案管理
 - **跨平台** — 支援 Windows、Linux、macOS
 - **公網接入** — 內建 frp 反向代理設定，配合 VPS 即可將服務暴露至公網
 - **開箱即用** — `start.bat`（Windows）或 `start.sh`（Linux/macOS）一鍵啟動，自動偵測並安裝缺失的依賴
@@ -705,12 +707,13 @@ set SMTP_PASS=your_smtp_password
 
 開啟公開倉庫：點擊頭像 → 開啟「公開倉庫」→ 切換至公開空間上傳檔案 → 其他用戶可透過使用者名稱搜尋到您。
 
-### 伺服器 TUI
+### 伺服器 CLI
 
-伺服器啟動後會顯示全彩終端儀表板，即時展示執行狀態、網路資訊和裝置發現。上下鍵選擇選單項目，無需手動輸入指令：
+伺服器內建基於文字的命令控制台。在 `ember>` 提示符下輸入命令：
 
 | 命令 | 功能描述 |
 |------|--------|
+| `help` | 顯示所有可用命令 |
 | `status` | 檢視伺服器執行狀態和網路資訊 |
 | `users` | 檢視已註冊用戶列表 |
 | `ls [路徑]` | 列出目錄內容 |
@@ -719,10 +722,11 @@ set SMTP_PASS=your_smtp_password
 | `mkdir <路徑>` | 建立目錄 |
 | `rm -y <路徑>` | 刪除檔案或目錄（需 `-y` 確認） |
 | `config` | 檢視目前執行設定 |
-| `clear` | 清空日誌面板 |
+| `clear` | 清空終端 |
 | `stop` / `restart` | 停止 / 重新啟動伺服器 |
+| `exit` / `quit` | 關閉伺服器 |
 
-按 `L` 鍵開啟完整日誌檢視器，↑↓ 捲動翻閱，Esc 返回。按 Ctrl+C 關閉伺服器。
+隨時按 Ctrl+C 關閉伺服器。
 
 ### 公網存取（frp）
 
@@ -740,7 +744,6 @@ set SMTP_PASS=your_smtp_password
 
 ```
 ├── start.bat               # 一鍵啟動指令碼（自動安裝依賴 + 啟動服務）
-├── start.ps1               # PowerShell 啟動指令碼（備選）
 ├── start.sh                # Linux/macOS 啟動指令碼
 ├── .gitignore
 ├── LICENSE
@@ -748,8 +751,8 @@ set SMTP_PASS=your_smtp_password
 ├── server/                 # 後端服務（Express）
 │   ├── package.json
 │   └── src/
-│       ├── index.js        # 入口模組 + API 路由 + TUI 互動
-│       ├── tui.js           # 終端儀表板（彩色面板 + 命令互動）
+│       ├── index.js        # 入口模組 + API 路由
+│       ├── cli.js           # 命令列介面（readline 互動控制台）
 │       ├── config.js       # 全域設定
 │       ├── auth.js         # Token 身份認證
 │       ├── users.js        # 用戶系統邏輯（加密資料儲存）
@@ -757,7 +760,7 @@ set SMTP_PASS=your_smtp_password
 │       ├── fileCrypto.js   # AES-256-CTR 靜態檔案加密
 │       ├── fileLock.js     # 並發寫入佇列鎖
 │       ├── rateLimit.js    # IP 頻率限制
-│       ├── repo-cli.js     # TUI 倉庫管理命令
+│       ├── repo-cli.js     # CLI 倉庫管理命令
 │       ├── discovery.js    # 區域網路裝置發現（HMAC 簽名 UDP）
 │       └── wsServer.js     # WebSocket 訊息推送
 ├── client/                 # 前端應用（React + Vite）

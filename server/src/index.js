@@ -18,7 +18,7 @@ const fileServer = require('./fileServer');
 const wsServer = require('./wsServer');
 const rateLimit = require('./rateLimit');
 rateLimit.init(config.rateLimit, config.security);
-const Tui = require('./tui');
+const Cli = require('./cli');
 
 const app = express();
 const server = http.createServer(app);
@@ -94,22 +94,6 @@ function getLanIPs() {
     }
   }
   return ips;
-}
-
-function getDiskUsage() {
-  try {
-    let totalSize = 0, fileCount = 0;
-    const walk = (dir) => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name.startsWith('.')) continue;
-        const p = path.join(dir, entry.name);
-        if (entry.isDirectory()) { walk(p); }
-        else if (entry.isFile()) { totalSize += fs.statSync(p).size; fileCount++; }
-      }
-    };
-    if (fs.existsSync(config.UPLOAD_DIR)) walk(config.UPLOAD_DIR);
-    return repoCli.formatSize(totalSize) + ` (${fileCount} files)`;
-  } catch { return '-'; }
 }
 
 // ============ Middleware ============
@@ -560,26 +544,11 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
   await userSystem.init();
   const lanIPs = getLanIPs();
   const publicIP = await publicIPPromise;
-  const startTime = Date.now();
 
   discovery.start(config.PORT);
 
-  // Initialize TUI
-  const tui = new Tui({
-    getStatus: () => ({
-      name: config.DEVICE_NAME,
-      port: config.PORT,
-      bind: config.BIND_ADDRESS,
-      uptime: Date.now() - startTime,
-      smtp: config.SMTP_HOST ? config.SMTP_HOST + ' (configured)' : '',
-      wsClients: wsServer.getClientCount(),
-      storage: config.UPLOAD_DIR,
-      diskUsage: getDiskUsage(),
-      registrationOpen: config.REGISTRATION_OPEN,
-      lanIPs: getLanIPs(),
-      publicIP: publicIP,
-    }),
-    getDevices: () => discovery.getDevices(),
+  // Initialize CLI
+  const cli = new Cli({
     onCommand: async (cmd) => {
       if (!cmd) return;
       const [command, ...rest] = cmd.trim().split(/\s+/);
@@ -588,82 +557,78 @@ server.listen(config.PORT, config.BIND_ADDRESS, async () => {
       switch (command) {
         case 'status': {
           const ips = getLanIPs();
-          tui.log(`Device: ${config.DEVICE_NAME} | Port: ${config.PORT} | WS: ${wsServer.getClientCount()} clients`);
-          for (const ip of ips) tui.log(`  http://${ip}:${config.PORT}`);
+          cli.log(`Device: ${config.DEVICE_NAME} | Port: ${config.PORT} | WS: ${wsServer.getClientCount()} clients`);
+          for (const ip of ips) cli.log(`  http://${ip}:${config.PORT}`);
           break;
         }
         case 'users': {
-          const users = await userSystem._loadUsers();
+          const users = await userSystem.loadUsers();
           const entries = Object.entries(users);
-          if (entries.length === 0) { tui.log('No registered users'); break; }
-          tui.log(`Registered users (${entries.length}):`);
+          if (entries.length === 0) { cli.log('No registered users'); break; }
+          cli.log(`Registered users (${entries.length}):`);
           for (const [email, u] of entries) {
-            tui.log(`  ${u.verified ? '✓' : '✗'} ${u.username}  ${email}  ${u.publicProfile ? 'Public' : 'Private'}`);
+            cli.log(`  ${u.verified ? '✓' : '✗'} ${u.username}  ${email}  ${u.publicProfile ? 'Public' : 'Private'}`);
           }
           break;
         }
         case 'config':
-          tui.log(`PORT=${config.PORT} NAME=${config.DEVICE_NAME} STORAGE=${config.UPLOAD_DIR}`);
-          tui.log(`MAX_SIZE=${config.MAX_FILE_SIZE || 'Unlimited'} MAX_FILES=${config.MAX_FILE_COUNT} REG_OPEN=${config.REGISTRATION_OPEN}`);
-          tui.log(`SMTP=${config.SMTP_HOST || 'Not configured'}:${config.SMTP_PORT} USER=${config.SMTP_USER || 'Not configured'}`);
-          break;
-        case 'clear':
-          tui.messages = [];
-          tui.render();
+          cli.log(`PORT=${config.PORT} NAME=${config.DEVICE_NAME} STORAGE=${config.UPLOAD_DIR}`);
+          cli.log(`MAX_SIZE=${config.MAX_FILE_SIZE || 'Unlimited'} MAX_FILES=${config.MAX_FILE_COUNT} REG_OPEN=${config.REGISTRATION_OPEN}`);
+          cli.log(`SMTP=${config.SMTP_HOST || 'Not configured'}:${config.SMTP_PORT} USER=${config.SMTP_USER || 'Not configured'}`);
           break;
         case 'stop':
-          shutdown('TUI');
+          shutdown('CLI');
           return;
         case 'restart':
-          tui.log('Restarting...');
+          cli.log('Restarting...');
           restartServer();
           return;
         case 'ls': repoCli.ls(args); break;
         case 'tree': repoCli.tree(args); break;
         
-        case 'info': args ? repoCli.info(args) : tui.log('Usage: info <path>'); break;
+        case 'info': args ? repoCli.info(args) : cli.log('Usage: info <path>'); break;
         case 'rm':
-          if (!args) { tui.log('Usage: rm <path>'); break; }
+          if (!args) { cli.log('Usage: rm -y <path>'); break; }
           if (args.startsWith('-y ')) {
             repoCli.rm(args.slice(3));
           } else if (args === '-y') {
-            tui.log('Usage: rm -y <path>');
+            cli.log('Usage: rm -y <path>');
           } else {
-            tui.log(`Are you sure you want to delete "${args}"? Type "rm -y ${args}" to confirm.`);
+            cli.log(`Are you sure you want to delete "${args}"? Type "rm -y ${args}" to confirm.`);
           }
           break;
-        case 'mkdir': args ? repoCli.mkdir(args) : tui.log('Usage: mkdir <path>'); break;
+        case 'mkdir': args ? repoCli.mkdir(args) : cli.log('Usage: mkdir <path>'); break;
+        default:
+          cli.log(`Unknown command: ${command}. Type "help" for available commands.`);
       }
     },
-    onShutdown: () => shutdown('TUI'),
-    onRestart: () => { restartServer(); },
+    onShutdown: () => shutdown('CLI'),
   });
 
-  // Redirect repo-cli output to TUI
-  repoCli.setLogger(msg => tui.log(msg));
+  // Route repo-cli output through the CLI so the prompt stays clean
+  repoCli.setLogger(msg => cli.log(msg));
 
-  // Redirect console.log to TUI log panel (so verification codes etc. are visible)
-  const _origConsoleLog = console.log;
-  console.log = (...args) => { tui.log(args.join(' ')); _origConsoleLog.apply(console, args); };
+  // Route server logs (verification codes, uploads, etc.) through the CLI
+  console.log = (...args) => cli.log(args.join(' '));
 
-  tui.start();
-  tui.log(`Server started on ${config.BIND_ADDRESS}:${config.PORT}`);
-  tui.log(`Device: ${config.DEVICE_NAME}`);
-  if (publicIP) tui.log(`Public IP: ${publicIP}`);
-  for (const ip of lanIPs) tui.log(`LAN: http://${ip}:${config.PORT}`);
-  tui.log(`SMTP: ${config.SMTP_HOST ? 'configured' : 'not configured'}`);
+  cli.start();
+  cli.log(`Server started on ${config.BIND_ADDRESS}:${config.PORT}`);
+  cli.log(`Device: ${config.DEVICE_NAME} | Storage: ${config.UPLOAD_DIR}`);
+  if (publicIP) cli.log(`Public IP: ${publicIP}`);
+  for (const ip of lanIPs) cli.log(`LAN: http://${ip}:${config.PORT}`);
+  cli.log(`SMTP: ${config.SMTP_HOST ? 'configured' : 'not configured'}`);
 
-  // Store tui reference for shutdown
-  server._tui = tui;
+  // Store cli reference for shutdown
+  server._cli = cli;
 });
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 function shutdown(signal) {
-  if (server._tui) {
-    server._tui.stop();
-    server._tui = null;
+  if (server._cli) {
+    server._cli.stop();
+    server._cli = null;
   }
   process.stdout.write('\n');
   console.log(`[Server] Received ${signal}, shutting down...`);
@@ -673,9 +638,9 @@ function shutdown(signal) {
 }
 
 function restartServer() {
-  if (server._tui) {
-    server._tui.stop();
-    server._tui = null;
+  if (server._cli) {
+    server._cli.stop();
+    server._cli = null;
   }
   process.stdout.write('\n');
   console.log('[Server] Restarting...');
@@ -692,5 +657,3 @@ function restartServer() {
     process.exit(0);
   });
 }
-
-userSystem._loadUsers = userSystem.loadUsers;
